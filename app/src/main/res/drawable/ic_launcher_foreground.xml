@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Main pad of the paw print -->
+    <path
+        android:fillColor="#311B92"
+        android:pathData="M54,49.5 C43.5,49.5 35,55.8 35,64.5 C35,72.2 42.5,78 54,78 C65.5,78 73,72.2 73,64.5 C73,55.8 64.5,49.5 54,49.5 Z" />
+
+    <!-- Toe 1 (Far Left) -->
+    <path
+        android:fillColor="#311B92"
+        android:pathData="M33,41.5 C29.4,41.5 26.5,44.4 26.5,48 C26.5,51.6 29.4,54.5 33,54.5 C36.6,54.5 39.5,51.6 39.5,48 C39.5,44.4 36.6,41.5 33,41.5 Z" />
+
+    <!-- Toe 2 (Inner Left) -->
+    <path
+        android:fillColor="#311B92"
+        android:pathData="M46.5,33 C42.6,33 39.5,36.1 39.5,40 C39.5,43.9 42.6,47 46.5,47 C50.4,47 53.5,43.9 53.5,40 C53.5,36.1 50.4,33 46.5,33 Z" />
+
+    <!-- Toe 3 (Inner Right) -->
+    <path
+        android:fillColor="#311B92"
+        android:pathData="M61.5,33 C57.6,33 54.5,36.1 54.5,40 C54.5,43.9 57.6,47 61.5,47 C65.4,47 68.5,43.9 68.5,40 C68.5,36.1 65.4,33 61.5,33 Z" />
+
+    <!-- Toe 4 (Far Right) -->
+    <path
+        android:fillColor="#311B92"
+        android:pathData="M75,41.5 C71.4,41.5 68.5,44.4 68.5,48 C68.5,51.6 71.4,54.5 75,54.5 C78.6,54.5 81.5,51.6 81.5,48 C81.5,44.4 78.6,41.5 75,41.5 Z" />
+</vector>
