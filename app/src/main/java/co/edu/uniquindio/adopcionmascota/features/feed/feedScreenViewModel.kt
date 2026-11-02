@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.update
 import androidx.lifecycle.viewModelScope
 import co.edu.uniquindio.adopcionmascota.core.data.PetRepository
 import kotlinx.coroutines.launch
+import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
 
 data class FeedUiState(
     val searchQuery: String = "",
@@ -156,6 +157,32 @@ class FeedScreenViewModel : ViewModel() {
 
     fun onToggleFavorite(pet: Pet) {
         PetRepository.update(pet.id) { it.copy(isFavorite = !it.isFavorite) }
+    }
+    fun onVote(pet: Pet) {
+        PetRepository.update(pet.id) {
+            if (it.votedByMe) {
+                it.copy(
+                    votedByMe = false,
+                    importantVotes = (it.importantVotes - 1).coerceAtLeast(0)
+                )
+            } else {
+                it.copy(votedByMe = true, importantVotes = it.importantVotes + 1)
+            }
+        }
+    }
+
+    fun onAddComment(pet: Pet, text: String) {
+        if (text.isBlank()) return
+        val author = SessionManager.currentUser?.name ?: "Usuario"
+        PetRepository.update(pet.id) {
+            it.copy(
+                comments = it.comments + Comment(
+                    id = System.currentTimeMillis().toString(),
+                    authorName = author,
+                    text = text.trim()
+                )
+            )
+        }
     }
 
     fun onFabClick() {

@@ -48,6 +48,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -55,7 +59,9 @@ fun PetDetailScreen(
     pet: Pet,
     onBack: () -> Unit,
     onAdoptClick: (Pet) -> Unit,
-    onToggleFavorite: (Pet) -> Unit
+    onToggleFavorite: (Pet) -> Unit,
+    onVote: (Pet) -> Unit = {},
+    onComment: (Pet, String) -> Unit = { _, _ -> }
 ) {
     Scaffold(
         topBar = {
@@ -336,6 +342,8 @@ fun PetDetailScreen(
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(20.dp))
+                CommentsSection(pet = pet, onVote = onVote, onComment = onComment)
 
                 Spacer(modifier = Modifier.height(24.dp))
             }
@@ -370,6 +378,85 @@ private fun InfoCard(
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF004D40)
             )
+        }
+    }
+}
+@Composable
+private fun CommentsSection(
+    pet: Pet,
+    onVote: (Pet) -> Unit,
+    onComment: (Pet, String) -> Unit
+) {
+    var text by remember { mutableStateOf("") }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+
+        // Botón "Es importante"
+        Button(
+            onClick = { onVote(pet) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (pet.votedByMe) Color(0xFF00BFA5) else Color.White,
+                contentColor = if (pet.votedByMe) Color.White else Color(0xFF004D40)
+            )
+        ) {
+            Icon(Icons.Default.ThumbUp, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = (if (pet.votedByMe) "Marcada como importante" else "Es importante") +
+                        " · ${pet.importantVotes}",
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Comentarios
+        Text(
+            text = "Comentarios (${pet.comments.size})",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1B5E20)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (pet.comments.isEmpty()) {
+            Text("Aún no hay comentarios. ¡Sé el primero!", color = Color.Gray, fontSize = 14.sp)
+        } else {
+            pet.comments.forEach { comment ->
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(comment.authorName, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text(comment.text, fontSize = 14.sp, color = Color.DarkGray)
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Caja para escribir un comentario
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                placeholder = { Text("Escribe un comentario...") },
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(
+                onClick = {
+                    onComment(pet, text)
+                    text = ""
+                },
+                enabled = text.isNotBlank()
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar comentario")
+            }
         }
     }
 }

@@ -77,7 +77,9 @@ fun FeedScreen(
             pet = selectedPet,
             onBack = { viewModel.onCloseDetail() },
             onAdoptClick = { viewModel.onAdoptClick(it) },
-            onToggleFavorite = { viewModel.onToggleFavorite(it) }
+            onToggleFavorite = { viewModel.onToggleFavorite(it) },
+            onVote = { viewModel.onVote(it) },
+            onComment = { pet, text -> viewModel.onAddComment(pet, text) }
         )
         return
     }
