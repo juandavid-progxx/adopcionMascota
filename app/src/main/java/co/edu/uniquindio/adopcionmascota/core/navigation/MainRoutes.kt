@@ -26,5 +26,6 @@ sealed class MainRoutes {
     data object PasswordRecovery : MainRoutes()
     @Serializable
     data object Profile : MainRoutes()
-
+    @Serializable
+    data class RequesterProfile(val notificationId: String) : MainRoutes()
 }

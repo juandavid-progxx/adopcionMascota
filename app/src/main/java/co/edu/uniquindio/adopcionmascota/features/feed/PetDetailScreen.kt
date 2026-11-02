@@ -52,6 +52,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -63,6 +64,7 @@ fun PetDetailScreen(
     onVote: (Pet) -> Unit = {},
     onComment: (Pet, String) -> Unit = { _, _ -> }
 ) {
+    val isOwner = pet.authorId == SessionManager.currentUser?.id
     Scaffold(
         topBar = {
             TopAppBar(
@@ -128,7 +130,7 @@ fun PetDetailScreen(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = pet.category.actionLabel,
+                            text = if (isOwner) pet.category.resolveLabel() else pet.category.actionLabel,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = Color.White

@@ -15,6 +15,8 @@ import co.edu.uniquindio.adopcionmascota.features.moderation.ModerationScreen
 import androidx.navigation.toRoute
 import co.edu.uniquindio.adopcionmascota.features.notifications.NotificationsScreen
 import co.edu.uniquindio.adopcionmascota.features.profile.ProfileScreen
+import co.edu.uniquindio.adopcionmascota.features.notifications.RequesterProfileScreen
+
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -73,7 +75,8 @@ fun AppNavigation() {
                     navController.navigate(MainRoutes.Feed(petId)) {
                         popUpTo<MainRoutes.Feed> { inclusive = true }
                     }
-                }
+                },
+                onOpenRequester = { id -> navController.navigate(MainRoutes.RequesterProfile(id)) }
             )
         }
         composable<MainRoutes.CreatePosts> {
@@ -87,6 +90,18 @@ fun AppNavigation() {
                 onLoggedOut = {
                     navController.navigate(MainRoutes.Home) {
                         popUpTo(MainRoutes.Home) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable<MainRoutes.RequesterProfile> { backStackEntry ->
+            val route = backStackEntry.toRoute<MainRoutes.RequesterProfile>()
+            RequesterProfileScreen(
+                notificationId = route.notificationId,
+                onBack = { navController.popBackStack() },
+                onOpenPet = { petId ->
+                    navController.navigate(MainRoutes.Feed(petId)) {
+                        popUpTo<MainRoutes.Feed> { inclusive = true }
                     }
                 }
             )

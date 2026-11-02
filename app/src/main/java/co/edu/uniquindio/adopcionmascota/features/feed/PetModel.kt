@@ -241,4 +241,12 @@ val samplePets = listOf(
         colorHex = 0xFFD7CCC8
     )
 
+
 )
+fun PetCategory.resolveLabel(): String = when (this) {
+    PetCategory.ADOPTION -> "Marcar como adoptada"
+    PetCategory.LOST -> "Marcar como encontrada"
+    PetCategory.FOUND -> "Marcar como entregada"
+    PetCategory.TEMPORARY -> "Marcar hogar encontrado"
+    PetCategory.VETERINARY -> "Marcar como finalizada"
+}

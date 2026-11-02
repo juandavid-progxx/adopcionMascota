@@ -63,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
 
 @Composable
 fun FeedScreen(
@@ -613,7 +614,7 @@ private fun PetCardItem(
                         )
                     ) {
                         Text(
-                            text = pet.category.shortLabel,
+                            text = if (pet.authorId == SessionManager.currentUser?.id) "Marcar resuelta" else pet.category.shortLabel,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = Color.White

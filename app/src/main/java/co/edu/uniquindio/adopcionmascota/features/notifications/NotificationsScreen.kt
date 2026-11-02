@@ -33,7 +33,8 @@ import java.util.Locale
 fun NotificationsScreen(
     viewModel: NotificationsViewModel = viewModel(),
     onBack: () -> Unit = {},
-    onOpenPet: (String) -> Unit = {}
+    onOpenPet: (String) -> Unit = {},
+    onOpenRequester: (String) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -67,7 +68,11 @@ fun NotificationsScreen(
                         n = n,
                         onClick = {
                             viewModel.onOpen(n)
-                            n.petId?.let { onOpenPet(it) }
+                            if (n.contactName != null) {
+                                onOpenRequester(n.id)           // solicitud: ver perfil de contacto
+                            } else {
+                                n.petId?.let { onOpenPet(it) }  // el resto: abrir la publicación
+                            }
                         },
                         onToggleRead = { viewModel.onToggleRead(n) }
                     )

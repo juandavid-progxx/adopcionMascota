@@ -114,7 +114,7 @@ fun HomeScreen(
 
                 // Mensaje exacto de bienvenida
                 Text(
-                    text = "Explora las mascotas que buscan una familia y descubre el amor incondicional que tienen para ofrecer.",
+                    text = "Adopta, reporta mascotas perdidas o encontradas, ofrece un hogar de paso y entérate de jornadas veterinarias. Todo en un solo lugar.",
                     fontSize = 11.sp,
                     color = Color.White.copy(alpha = 0.95f),
                     textAlign = TextAlign.Center,
@@ -193,7 +193,7 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Adopta, publica y conecta con la comunidad.",
+                                    text = "Publica, busca y ayuda a las mascotas de tu comunidad.",
                                     fontSize = 11.sp,
                                     color = Color(0xFF607D8B)
                                 )

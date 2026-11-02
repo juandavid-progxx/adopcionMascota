@@ -110,7 +110,13 @@ class FeedScreenViewModel : ViewModel() {
     }
 
     fun onAdoptClick(pet: Pet) {
-        _uiState.update { it.copy(adoptionDialogPet = pet) }
+        if (pet.authorId == SessionManager.currentUser?.id) {
+            // Es mi publicación: el botón la marca como resuelta
+            PetRepository.update(pet.id) { it.copy(status = PostStatus.RESOLVED) }
+            onCloseDetail()
+        } else {
+            _uiState.update { it.copy(adoptionDialogPet = pet) }
+        }
     }
 
     fun onDismissAdoptionDialog() {
@@ -124,8 +130,11 @@ class FeedScreenViewModel : ViewModel() {
             NotificationRepository.add(
                 userId = pet.authorId,
                 title = "Nueva solicitud: ${pet.category.displayName}",
-                message = "${user?.name ?: "Alguien"} envió una solicitud (\"${pet.category.actionLabel}\") para tu publicación \"${pet.name}\"",
-                petId = pet.id
+                message = "${user?.name ?: "Alguien"} envió una solicitud (\"${pet.category.actionLabel}\") para tu publicación \"${pet.name}\". Toca para ver sus datos de contacto.",
+                petId = pet.id,
+                contactName = user?.name ?: "Usuario",
+                contactEmail = user?.email,
+                contactPhone = user?.phone
             )
         }
         _uiState.update {
