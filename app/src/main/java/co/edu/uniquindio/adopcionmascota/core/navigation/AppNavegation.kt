@@ -22,7 +22,8 @@ fun AppNavigation() {
     ) {
         composable<MainRoutes.Home> {
             HomeScreen(
-                onUserAccessClick = { navController.navigate(MainRoutes.Feed) },
+                onUserAccessClick = { navController.navigate(MainRoutes.Login) },
+                onModeratorAccessClick = { navController.navigate(MainRoutes.Login) },
                 onLoginClick = { navController.navigate(MainRoutes.Login) },
                 onRegisterClick = { navController.navigate(MainRoutes.Register) }
             )

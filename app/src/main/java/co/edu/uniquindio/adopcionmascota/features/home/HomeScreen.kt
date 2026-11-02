@@ -242,7 +242,6 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
                     .clickable {
-                        viewModel.selectModeratorRole()
                         onModeratorAccessClick()
                     }
                     .border(1.dp, Color(0xFFCFD8D5), RoundedCornerShape(16.dp)),
