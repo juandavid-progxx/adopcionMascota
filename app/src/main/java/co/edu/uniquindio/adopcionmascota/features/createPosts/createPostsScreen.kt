@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.core.util.RequestResult
+import co.edu.uniquindio.adopcionmascota.features.feed.PetCategory
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -140,9 +141,9 @@ fun CreatePostsScreen(
             state.photosError?.let { ErrorText(text = it) }
 
             // 3. Selección de categoría
-            SectionHeader(title = "Categoría *")
+            SectionHeader(title = "Tipo de animal *")
             CategorySelectionSection(
-                selectedCategory = state.selectedCategory,
+                selectedCategory = state.selectedAnimal,
                 onCategorySelected = { viewModel.onCategorySelected(it) }
             )
             state.categoryError?.let { ErrorText(text = it) }
@@ -440,15 +441,15 @@ private fun PhotoSelectionSection(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CategorySelectionSection(
-    selectedCategory: PostCategory?,
-    onCategorySelected: (PostCategory) -> Unit
+    selectedCategory: AnimalType?,
+    onCategorySelected: (AnimalType) -> Unit
 ) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        PostCategory.values().forEach { category ->
+        AnimalType.values().forEach { category ->
             val isSelected = category == selectedCategory
             val bgColor = if (isSelected) Color(0xFF80CBC4) else Color(0xFFE8F0EC)
             val textColor = if (isSelected) Color(0xFF004D40) else Color.DarkGray
@@ -730,6 +731,47 @@ private fun LocationSelectionSection(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF004D40)
+                    )
+                }
+            }
+        }
+    }
+}
+@Composable
+private fun PetCategorySelectionSection(
+    selected: PetCategory,
+    onSelected: (PetCategory) -> Unit
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        PetCategory.values().forEach { category ->
+            val isSelected = category == selected
+            val bgColor = if (isSelected) Color(0xFF80CBC4) else Color(0xFFE8F0EC)
+            val textColor = if (isSelected) Color(0xFF004D40) else Color.DarkGray
+            val borderColor = if (isSelected) Color(0xFF004D40) else Color(0xFFD0E0D8)
+
+            Surface(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable { onSelected(category) }
+                    .border(1.dp, borderColor, RoundedCornerShape(20.dp)),
+                color = bgColor,
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = category.emoji, fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = category.displayName,
+                        fontSize = 14.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = textColor
                     )
                 }
             }

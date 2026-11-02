@@ -1,18 +1,20 @@
 package co.edu.uniquindio.adopcionmascota.features.feed
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import co.edu.uniquindio.adopcionmascota.core.data.NotificationRepository
+import co.edu.uniquindio.adopcionmascota.core.data.PetRepository
+import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
 import co.edu.uniquindio.adopcionmascota.core.util.RequestResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import androidx.lifecycle.viewModelScope
-import co.edu.uniquindio.adopcionmascota.core.data.PetRepository
 import kotlinx.coroutines.launch
-import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
-import co.edu.uniquindio.adopcionmascota.core.data.NotificationRepository
+
 data class FeedUiState(
     val searchQuery: String = "",
+    val selectedCategory: PetCategory? = null,   // null = todas las categorías
     val selectedPetType: PetType = PetType.ALL,
     val selectedLocation: LocationFilter = LocationFilter.ALL_COUNTRY,
     val viewMode: ViewMode = ViewMode.LIST,
@@ -26,6 +28,24 @@ data class FeedUiState(
     val requestResult: RequestResult? = null
 )
 
+// Aplica todos los filtros activos sobre la lista de publicaciones visibles
+private fun FeedUiState.withFilters(): FeedUiState {
+    val result = pets.filter { pet ->
+        val matchesCategory = selectedCategory == null || pet.category == selectedCategory
+        val matchesType = selectedPetType == PetType.ALL || pet.type == selectedPetType
+        val matchesLocation = selectedLocation == LocationFilter.ALL_COUNTRY ||
+                pet.locationFilter == selectedLocation
+        val matchesQuery = searchQuery.isBlank() ||
+                pet.name.contains(searchQuery, ignoreCase = true) ||
+                pet.breed.contains(searchQuery, ignoreCase = true) ||
+                pet.city.contains(searchQuery, ignoreCase = true) ||
+                pet.description.contains(searchQuery, ignoreCase = true) ||
+                pet.type.displayName.contains(searchQuery, ignoreCase = true)
+        matchesCategory && matchesType && matchesLocation && matchesQuery
+    }
+    return copy(filteredPets = result)
+}
+
 class FeedScreenViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(FeedUiState())
@@ -35,129 +55,96 @@ class FeedScreenViewModel : ViewModel() {
         viewModelScope.launch {
             PetRepository.pets.collect { all ->
                 _uiState.update { state ->
-                    val visibles = all.filter { it.status == PostStatus.VERIFIED }
                     state.copy(
-                        pets = visibles,
-                        filteredPets = filterPets(
-                            pets = visibles,
-                            query = state.searchQuery,
-                            type = state.selectedPetType,
-                            location = state.selectedLocation
-                        ),
+                        // El feed público solo muestra publicaciones verificadas
+                        pets = all.filter { it.status == PostStatus.VERIFIED },
                         selectedPetForDetail = state.selectedPetForDetail?.let { sel ->
                             all.find { it.id == sel.id }
                         }
-                    )
+                    ).withFilters()
                 }
             }
         }
     }
+
     fun onSearchQueryChange(query: String) {
-        _uiState.update { state ->
-            val newFiltered = filterPets(
-                pets = state.pets,
-                query = query,
-                type = state.selectedPetType,
-                location = state.selectedLocation
-            )
-            state.copy(
-                searchQuery = query,
-                filteredPets = newFiltered
-            )
-        }
+        _uiState.update { it.copy(searchQuery = query).withFilters() }
+    }
+
+    fun onCategorySelected(category: PetCategory?) {
+        _uiState.update { it.copy(selectedCategory = category).withFilters() }
     }
 
     fun onPetTypeSelected(type: PetType) {
-        _uiState.update { state ->
-            val newFiltered = filterPets(
-                pets = state.pets,
-                query = state.searchQuery,
-                type = type,
-                location = state.selectedLocation
-            )
-            state.copy(
-                selectedPetType = type,
-                filteredPets = newFiltered
-            )
-        }
+        _uiState.update { it.copy(selectedPetType = type).withFilters() }
     }
 
     fun onLocationSelected(location: LocationFilter) {
-        _uiState.update { state ->
-            val newFiltered = filterPets(
-                pets = state.pets,
-                query = state.searchQuery,
-                type = state.selectedPetType,
-                location = location
-            )
-            state.copy(
-                selectedLocation = location,
-                filteredPets = newFiltered
-            )
-        }
+        _uiState.update { it.copy(selectedLocation = location).withFilters() }
     }
 
     fun onViewModeSelected(mode: ViewMode) {
-        _uiState.update { state ->
-            state.copy(viewMode = mode)
-        }
+        _uiState.update { it.copy(viewMode = mode) }
     }
 
     fun onBottomNavItemSelected(item: BottomNavItem) {
         _uiState.update { state ->
-            if (item == BottomNavItem.MAP) {
-                state.copy(selectedBottomNavItem = item, viewMode = ViewMode.MAP)
-            } else if (item == BottomNavItem.HOME) {
-                state.copy(selectedBottomNavItem = item, viewMode = ViewMode.LIST)
-            } else {
-                state.copy(selectedBottomNavItem = item)
+            when (item) {
+                BottomNavItem.MAP -> state.copy(selectedBottomNavItem = item, viewMode = ViewMode.MAP)
+                BottomNavItem.HOME -> state.copy(selectedBottomNavItem = item, viewMode = ViewMode.LIST)
+                else -> state.copy(selectedBottomNavItem = item)
             }
         }
     }
 
     fun onPetSelectedForDetail(pet: Pet) {
-        _uiState.update { state ->
-            state.copy(selectedPetForDetail = pet)
-        }
+        _uiState.update { it.copy(selectedPetForDetail = pet) }
+    }
+
+    fun openPetById(id: String) {
+        PetRepository.pets.value.find { it.id == id }?.let { onPetSelectedForDetail(it) }
     }
 
     fun onCloseDetail() {
-        _uiState.update { state ->
-            state.copy(selectedPetForDetail = null)
-        }
+        _uiState.update { it.copy(selectedPetForDetail = null) }
     }
 
     fun onAdoptClick(pet: Pet) {
-        _uiState.update { state ->
-            state.copy(adoptionDialogPet = pet)
-        }
+        _uiState.update { it.copy(adoptionDialogPet = pet) }
     }
 
     fun onDismissAdoptionDialog() {
-        _uiState.update { state ->
-            state.copy(adoptionDialogPet = null)
-        }
+        _uiState.update { it.copy(adoptionDialogPet = null) }
     }
 
+    // Solicitud según la categoría (adoptar, dar información, hogar de paso...)
     fun onConfirmAdoption(pet: Pet) {
-        _uiState.update { state ->
-            state.copy(
+        val user = SessionManager.currentUser
+        if (user?.id != pet.authorId) {
+            NotificationRepository.add(
+                userId = pet.authorId,
+                title = "Nueva solicitud: ${pet.category.displayName}",
+                message = "${user?.name ?: "Alguien"} envió una solicitud (\"${pet.category.actionLabel}\") para tu publicación \"${pet.name}\"",
+                petId = pet.id
+            )
+        }
+        _uiState.update {
+            it.copy(
                 adoptionDialogPet = null,
-                adoptionSuccessMessage = "¡Solicitud de adopción enviada con éxito para ${pet.name}! El refugio se pondrá en contacto contigo pronto.",
-                requestResult = RequestResult.Success("Proceso de adopción iniciado")
+                adoptionSuccessMessage = "Tu solicitud para \"${pet.name}\" fue enviada. El autor de la publicación recibirá una notificación y se pondrá en contacto contigo.",
+                requestResult = RequestResult.Success("Solicitud enviada")
             )
         }
     }
 
     fun onDismissSuccessMessage() {
-        _uiState.update { state ->
-            state.copy(adoptionSuccessMessage = null, requestResult = null)
-        }
+        _uiState.update { it.copy(adoptionSuccessMessage = null, requestResult = null) }
     }
 
     fun onToggleFavorite(pet: Pet) {
         PetRepository.update(pet.id) { it.copy(isFavorite = !it.isFavorite) }
     }
+
     fun onVote(pet: Pet) {
         PetRepository.update(pet.id) {
             if (it.votedByMe) {
@@ -184,7 +171,6 @@ class FeedScreenViewModel : ViewModel() {
                 )
             )
         }
-        // Avisar al autor (si quien comenta no es el mismo autor)
         if (pet.authorId != user?.id) {
             NotificationRepository.add(
                 userId = pet.authorId,
@@ -196,36 +182,10 @@ class FeedScreenViewModel : ViewModel() {
     }
 
     fun onFabClick() {
-        _uiState.update { state ->
-            state.copy(showPublishDialog = true)
-        }
+        _uiState.update { it.copy(showPublishDialog = true) }
     }
 
     fun onDismissPublishDialog() {
-        _uiState.update { state ->
-            state.copy(showPublishDialog = false)
-        }
-    }
-    fun openPetById(id: String) {
-        PetRepository.pets.value.find { it.id == id }?.let { onPetSelectedForDetail(it) }
-    }
-
-    private fun filterPets(
-        pets: List<Pet>,
-        query: String,
-        type: PetType,
-        location: LocationFilter
-    ): List<Pet> {
-        return pets.filter { pet ->
-            val matchesType = type == PetType.ALL || pet.type == type
-            val matchesLocation = location == LocationFilter.ALL_COUNTRY || pet.locationFilter == location
-            val matchesQuery = query.isBlank() ||
-                    pet.name.contains(query, ignoreCase = true) ||
-                    pet.breed.contains(query, ignoreCase = true) ||
-                    pet.city.contains(query, ignoreCase = true) ||
-                    pet.description.contains(query, ignoreCase = true)
-
-            matchesType && matchesLocation && matchesQuery
-        }
+        _uiState.update { it.copy(showPublishDialog = false) }
     }
 }

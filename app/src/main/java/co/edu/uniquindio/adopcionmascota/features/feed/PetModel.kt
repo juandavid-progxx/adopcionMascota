@@ -37,6 +37,34 @@ data class Comment(
     val authorName: String,
     val text: String
 )
+enum class PetCategory(
+    val displayName: String,
+    val emoji: String,
+    val shortLabel: String,      // texto del botón en la tarjeta
+    val actionLabel: String,     // texto del botón en el detalle
+    val requestMessage: String   // texto del cuadro de confirmación
+) {
+    ADOPTION(
+        "Adopción", "🏠", "Adoptar", "Me interesa adoptar",
+        "¿Deseas enviar tu solicitud de adopción para {name}? El autor de la publicación la recibirá y se pondrá en contacto contigo."
+    ),
+    LOST(
+        "Perdidos", "🔍", "Tengo info", "Tengo información",
+        "¿Tienes información sobre {name}? Avisaremos al dueño para que se comunique contigo."
+    ),
+    FOUND(
+        "Encontrados", "📍", "Es mía", "Creo que es mi mascota",
+        "¿Crees que {name} es tu mascota? Avisaremos a quien la encontró para que te contacte."
+    ),
+    TEMPORARY(
+        "Temporal", "🤝", "Ofrecer hogar", "Ofrezco hogar de paso",
+        "¿Quieres ofrecer un hogar de paso para {name}? El autor recibirá tu ofrecimiento."
+    ),
+    VETERINARY(
+        "Veterinaria", "💉", "Me interesa", "Me interesa",
+        "¿Te interesa \"{name}\"? Avisaremos al organizador."
+    )
+}
 
 data class Pet(
     val id: String,
@@ -59,7 +87,8 @@ data class Pet(
     val rejectionReason: String? = null,
     val importantVotes: Int = 0,
     val votedByMe: Boolean = false,
-    val comments: List<Comment> = emptyList()
+    val comments: List<Comment> = emptyList(),
+    val category: PetCategory = PetCategory.ADOPTION
 )
 
 val samplePets = listOf(
@@ -142,5 +171,74 @@ val samplePets = listOf(
         shelterName = "Fundación Adopta Un Amigo",
         shelterContact = "+57 300 888 9900",
         colorHex = 0xFFF8BBD0
+    ),
+    Pet(
+        id = "6",
+        name = "Rocky",
+        type = PetType.DOG,
+        breed = "Labrador",
+        age = "4 años",
+        gender = "Macho",
+        size = "Grande",
+        city = "Armenia, Quindío",
+        locationFilter = LocationFilter.IN_CITY,
+        description = "Se perdió cerca del parque Sucre el domingo. Tiene collar azul y responde a su nombre.",
+        healthInfo = listOf("Vacunas al día"),
+        shelterName = "Carlos Gómez",
+        shelterContact = "+57 311 222 3344",
+        category = PetCategory.LOST,
+        colorHex = 0xFFFFCCBC
+    ),
+    Pet(
+        id = "7",
+        name = "Gato atigrado",
+        type = PetType.CAT,
+        breed = "Mestizo",
+        age = "Adulto",
+        gender = "Macho",
+        size = "Mediano",
+        city = "Armenia, Quindío",
+        locationFilter = LocationFilter.NEARBY,
+        description = "Lo encontré en el barrio Centenario, muy manso y con collar rojo sin placa.",
+        healthInfo = emptyList(),
+        shelterName = "María Rojas",
+        shelterContact = "+57 314 777 8899",
+        category = PetCategory.FOUND,
+        colorHex = 0xFFFFF9C4
+    ),
+    Pet(
+        id = "8",
+        name = "Jornada de vacunación gratuita",
+        type = PetType.OTHER,
+        breed = "Todas las razas",
+        age = "No aplica",
+        gender = "No aplica",
+        size = "No aplica",
+        city = "Calarcá, Quindío",
+        locationFilter = LocationFilter.NEARBY,
+        description = "Vacunación antirrábica y esterilización gratuita para perros y gatos este sábado en el parque principal.",
+        healthInfo = listOf("Vacunación gratuita", "Esterilización"),
+        shelterName = "Secretaría de Salud",
+        shelterContact = "+57 606 123 4567",
+        category = PetCategory.VETERINARY,
+        colorHex = 0xFFBBDEFB
+    ),
+    Pet(
+        id = "9",
+        name = "Nala",
+        type = PetType.DOG,
+        breed = "Criolla",
+        age = "1 año",
+        gender = "Hembra",
+        size = "Mediano",
+        city = "Armenia, Quindío",
+        locationFilter = LocationFilter.IN_CITY,
+        description = "Necesita un hogar de paso por 3 semanas mientras se recupera de una cirugía.",
+        healthInfo = listOf("Vacunas al día", "Esterilizada"),
+        shelterName = "Hogar de Paso Patitas",
+        shelterContact = "+57 316 555 0000",
+        category = PetCategory.TEMPORARY,
+        colorHex = 0xFFD7CCC8
     )
+
 )

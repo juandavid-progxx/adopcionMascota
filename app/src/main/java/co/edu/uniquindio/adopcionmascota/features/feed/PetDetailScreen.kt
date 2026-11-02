@@ -109,7 +109,7 @@ fun PetDetailScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Refugio / Organización",
+                            text = "Publicado por",
                             fontSize = 12.sp,
                             color = Color.Gray
                         )
@@ -128,7 +128,7 @@ fun PetDetailScreen(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = "Adoptar a ${pet.name}",
+                            text = pet.category.actionLabel,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = Color.White

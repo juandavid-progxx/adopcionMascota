@@ -15,8 +15,8 @@ import co.edu.uniquindio.adopcionmascota.features.feed.LocationFilter
 import co.edu.uniquindio.adopcionmascota.features.feed.Pet
 import co.edu.uniquindio.adopcionmascota.features.feed.PetType
 import co.edu.uniquindio.adopcionmascota.features.feed.PostStatus
-
-enum class PostCategory(val displayName: String, val emoji: String) {
+import co.edu.uniquindio.adopcionmascota.features.feed.PetCategory
+enum class AnimalType(val displayName: String, val emoji: String) {
     DOG("Perro", "🐕"),
     CAT("Gato", "🐈"),
     RABBIT("Conejo", "🐇"),
@@ -38,7 +38,7 @@ data class PostLocation(
 
 data class CreatePostUiState(
     val photos: List<String> = listOf("foto_luna_1.jpg", "foto_luna_2.jpg"),
-    val selectedCategory: PostCategory? = PostCategory.DOG,
+    val selectedAnimal: AnimalType? = AnimalType.DOG,
     val title: String = "",
     val breed: String = "",
     val age: String = "",
@@ -55,14 +55,15 @@ data class CreatePostUiState(
     val descriptionError: String? = null,
     val locationError: String? = null,
     val photosError: String? = null,
-    val publishResult: RequestResult? = null
+    val publishResult: RequestResult? = null,
+    val selectedPetCategory: PetCategory = PetCategory.ADOPTION,
 ) {
     val maxDescriptionLength: Int = 500
 
     val isFormValid: Boolean
         get() = title.isNotBlank() &&
                 breed.isNotBlank() &&
-                selectedCategory != null &&
+                selectedAnimal != null &&
                 selectedSize != null &&
                 description.isNotBlank() &&
                 selectedLocation != null &&
@@ -102,11 +103,14 @@ class CreatePostsViewModel : ViewModel() {
             )
         }
     }
+    fun onPetCategorySelected(category: PetCategory) {
+        _uiState.update { it.copy(selectedPetCategory = category) }
+    }
 
-    fun onCategorySelected(category: PostCategory) {
+    fun onCategorySelected(category: AnimalType) {
         _uiState.update { state ->
             state.copy(
-                selectedCategory = category,
+                selectedAnimal = category,
                 categoryError = null
             )
         }
@@ -189,7 +193,7 @@ class CreatePostsViewModel : ViewModel() {
         // Validación exhaustiva antes de publicar
         val titleErr = if (currentState.title.isBlank()) "El título es obligatorio" else null
         val breedErr = if (currentState.breed.isBlank()) "La raza es obligatoria" else null
-        val categoryErr = if (currentState.selectedCategory == null) "Selecciona una categoría" else null
+        val categoryErr = if (currentState.selectedAnimal == null) "Selecciona una categoría" else null
         val sizeErr = if (currentState.selectedSize == null) "Selecciona un tamaño" else null
         val descErr = if (currentState.description.isBlank()) "La descripción es obligatoria" else null
         val locErr = if (currentState.selectedLocation == null) "Selecciona una ubicación en el mapa" else null
@@ -228,11 +232,11 @@ class CreatePostsViewModel : ViewModel() {
                 Pet(
                     id = System.currentTimeMillis().toString(),
                     name = currentState.title,
-                    type = when (currentState.selectedCategory) {
-                        PostCategory.DOG -> PetType.DOG
-                        PostCategory.CAT -> PetType.CAT
-                        PostCategory.RABBIT -> PetType.RABBIT
-                        PostCategory.BIRD -> PetType.BIRD
+                    type = when (currentState.selectedAnimal) {
+                        AnimalType.DOG -> PetType.DOG
+                        AnimalType.CAT -> PetType.CAT
+                        AnimalType.RABBIT -> PetType.RABBIT
+                        AnimalType.BIRD -> PetType.BIRD
                         else -> PetType.OTHER
                     },
                     breed = currentState.breed,
@@ -246,6 +250,7 @@ class CreatePostsViewModel : ViewModel() {
                     shelterName = user?.name ?: "Usuario",
                     shelterContact = user?.email ?: "",
                     authorId = user?.id ?: "demo",
+                    category = currentState.selectedPetCategory,
                     status = PostStatus.PENDING
                 )
             )
