@@ -77,3 +77,42 @@ fun RequestDialogs(
         )
     }
 }
+@Composable
+fun ResolveDialog(
+    state: FeedUiState,
+    viewModel: FeedScreenViewModel
+) {
+    state.resolveDialogPet?.let { pet ->
+        AlertDialog(
+            onDismissRequest = { viewModel.onDismissResolve() },
+            title = {
+                Text(
+                    text = pet.category.resolveLabel(),
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF004D40)
+                )
+            },
+            text = {
+                Text(
+                    text = "¿Estás seguro de que quieres marcar \"${pet.name}\" como resuelta? Dejará de mostrarse en el feed público.",
+                    fontSize = 14.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.onConfirmResolve() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00BFA5))
+                ) {
+                    Text("Sí, marcar", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onDismissResolve() }) {
+                    Text("Cancelar", color = Color.Gray)
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = Color.White
+        )
+    }
+}

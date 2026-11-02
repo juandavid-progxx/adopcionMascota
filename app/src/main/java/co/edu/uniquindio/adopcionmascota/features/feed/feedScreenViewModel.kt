@@ -23,6 +23,7 @@ data class FeedUiState(
     val filteredPets: List<Pet> = samplePets,
     val selectedPetForDetail: Pet? = null,
     val adoptionDialogPet: Pet? = null,
+    val resolveDialogPet: Pet? = null,
     val adoptionSuccessMessage: String? = null,
     val showPublishDialog: Boolean = false,
     val requestResult: RequestResult? = null
@@ -111,12 +112,21 @@ class FeedScreenViewModel : ViewModel() {
 
     fun onAdoptClick(pet: Pet) {
         if (pet.authorId == SessionManager.currentUser?.id) {
-            // Es mi publicación: el botón la marca como resuelta
-            PetRepository.update(pet.id) { it.copy(status = PostStatus.RESOLVED) }
-            onCloseDetail()
+            // Es mi publicación: primero pedimos confirmación para resolverla
+            _uiState.update { it.copy(resolveDialogPet = pet) }
         } else {
             _uiState.update { it.copy(adoptionDialogPet = pet) }
         }
+    }
+
+    fun onDismissResolve() {
+        _uiState.update { it.copy(resolveDialogPet = null) }
+    }
+
+    fun onConfirmResolve() {
+        val pet = _uiState.value.resolveDialogPet ?: return
+        PetRepository.update(pet.id) { it.copy(status = PostStatus.RESOLVED) }
+        _uiState.update { it.copy(resolveDialogPet = null, selectedPetForDetail = null) }
     }
 
     fun onDismissAdoptionDialog() {

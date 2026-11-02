@@ -90,6 +90,7 @@ fun FeedScreen(
             onComment = { pet, text -> viewModel.onAddComment(pet, text) }
         )
         RequestDialogs(state = state, viewModel = viewModel)
+        ResolveDialog(state = state, viewModel = viewModel)
         return
     }
 
@@ -199,6 +200,7 @@ fun FeedScreen(
             }
         }
     }
+    ResolveDialog(state = state, viewModel = viewModel)
 
     // Diálogo de confirmación para adopción
     state.adoptionDialogPet?.let { pet ->
