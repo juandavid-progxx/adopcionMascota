@@ -141,12 +141,19 @@ fun CreatePostsScreen(
             state.photosError?.let { ErrorText(text = it) }
 
             // 3. Selección de categoría
+
+            SectionHeader(title = "Categoría *")
+            PetCategorySelectionSection(
+                selected = state.selectedPetCategory,
+                onSelected = { viewModel.onPetCategorySelected(it) }
+            )
             SectionHeader(title = "Tipo de animal *")
             CategorySelectionSection(
                 selectedCategory = state.selectedAnimal,
                 onCategorySelected = { viewModel.onCategorySelected(it) }
             )
             state.categoryError?.let { ErrorText(text = it) }
+
 
             // 4. Campo de título
             SectionHeader(title = "Título *")

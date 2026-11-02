@@ -14,6 +14,7 @@ import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
 import co.edu.uniquindio.adopcionmascota.features.moderation.ModerationScreen
 import androidx.navigation.toRoute
 import co.edu.uniquindio.adopcionmascota.features.notifications.NotificationsScreen
+import co.edu.uniquindio.adopcionmascota.features.profile.ProfileScreen
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -62,7 +63,7 @@ fun AppNavigation() {
                 initialPetId = route.petId,
                 onCreatePostClick = { navController.navigate(MainRoutes.CreatePosts) },
                 onNotificationsClick = { navController.navigate(MainRoutes.Notifications) },
-                onProfileClick = { /* Se conecta en el Paso 9 */ }
+                onProfileClick = { navController.navigate(MainRoutes.Profile) }
             )
         }
         composable<MainRoutes.Notifications> {
@@ -78,6 +79,16 @@ fun AppNavigation() {
         composable<MainRoutes.CreatePosts> {
             CreatePostsScreen(
                 onBack = { navController.popBackStack() }
+            )
+        }
+        composable<MainRoutes.Profile> {
+            ProfileScreen(
+                onBack = { navController.popBackStack() },
+                onLoggedOut = {
+                    navController.navigate(MainRoutes.Home) {
+                        popUpTo(MainRoutes.Home) { inclusive = true }
+                    }
+                }
             )
         }
         composable<MainRoutes.PasswordRecovery> {

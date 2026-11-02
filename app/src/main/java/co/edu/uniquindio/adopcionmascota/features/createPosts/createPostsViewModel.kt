@@ -39,6 +39,7 @@ data class PostLocation(
 data class CreatePostUiState(
     val photos: List<String> = listOf("foto_luna_1.jpg", "foto_luna_2.jpg"),
     val selectedAnimal: AnimalType? = AnimalType.DOG,
+    val selectedPetCategory: PetCategory = PetCategory.ADOPTION,
     val title: String = "",
     val breed: String = "",
     val age: String = "",
@@ -55,8 +56,8 @@ data class CreatePostUiState(
     val descriptionError: String? = null,
     val locationError: String? = null,
     val photosError: String? = null,
-    val publishResult: RequestResult? = null,
-    val selectedPetCategory: PetCategory = PetCategory.ADOPTION,
+    val publishResult: RequestResult? = null
+
 ) {
     val maxDescriptionLength: Int = 500
 
@@ -115,6 +116,7 @@ class CreatePostsViewModel : ViewModel() {
             )
         }
     }
+
 
     fun onTitleChange(newTitle: String) {
         _uiState.update { state ->

@@ -23,4 +23,7 @@ object PetRepository {
     fun delete(id: String) {
         _pets.update { list -> list.filter { it.id != id } }
     }
+    fun deleteByAuthor(authorId: String) {
+        _pets.update { list -> list.filter { it.authorId != authorId } }
+    }
 }

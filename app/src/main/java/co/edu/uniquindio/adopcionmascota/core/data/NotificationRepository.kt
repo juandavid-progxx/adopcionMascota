@@ -43,4 +43,7 @@ object NotificationRepository {
     fun markAllRead(userId: String) {
         _all.update { list -> list.map { if (it.userId == userId) it.copy(isRead = true) else it } }
     }
+    fun deleteForUser(userId: String) {
+        _all.update { list -> list.filter { it.userId != userId } }
+    }
 }

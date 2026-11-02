@@ -4,7 +4,8 @@ data class User(
     val id: String,
     val name: String,
     val email: String,
-    val isModerator: Boolean = false
+    val isModerator: Boolean = false,
+    val phone: String = ""
 )
 
 object SessionManager {
@@ -34,5 +35,8 @@ object SessionManager {
 
     fun logout() {
         currentUser = null
+    }
+    fun updateProfile(name: String, phone: String) {
+        currentUser = currentUser?.copy(name = name, phone = phone)
     }
 }
