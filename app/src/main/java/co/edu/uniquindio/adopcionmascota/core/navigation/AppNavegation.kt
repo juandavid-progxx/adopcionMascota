@@ -10,6 +10,8 @@ import co.edu.uniquindio.adopcionmascota.features.home.HomeScreen
 import co.edu.uniquindio.adopcionmascota.features.login.LoginScreen
 import co.edu.uniquindio.adopcionmascota.features.passwordRecovery.PasswordRecoveryScreen
 import co.edu.uniquindio.adopcionmascota.features.register.RegisterScreen
+import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
+import co.edu.uniquindio.adopcionmascota.features.moderation.ModerationScreen
 
 @Composable
 fun AppNavigation() {
@@ -27,7 +29,13 @@ fun AppNavigation() {
         }
         composable<MainRoutes.Login> {
             LoginScreen(
-                onLoginSuccess = { navController.navigate(MainRoutes.Feed) },
+                onLoginSuccess = {
+                    if (SessionManager.isModerator) {
+                        navController.navigate(MainRoutes.Moderation) { popUpTo(MainRoutes.Home) }
+                    } else {
+                        navController.navigate(MainRoutes.Feed)
+                    }
+                },
                 onForgotPasswordClick = { navController.navigate(MainRoutes.PasswordRecovery) },
                 onRegisterClick = { navController.navigate(MainRoutes.Register) },
                 onGoogleLoginClick = { navController.navigate(MainRoutes.Feed) }
@@ -36,6 +44,14 @@ fun AppNavigation() {
         composable<MainRoutes.Register> {
             RegisterScreen(
                 onBack = { navController.popBackStack() }
+            )
+        }
+        composable<MainRoutes.Moderation> {
+            ModerationScreen(
+                onLogout = {
+                    SessionManager.logout()
+                    navController.navigate(MainRoutes.Home) { popUpTo(MainRoutes.Home) { inclusive = true } }
+                }
             )
         }
         composable<MainRoutes.Feed> {

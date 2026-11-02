@@ -9,6 +9,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import co.edu.uniquindio.adopcionmascota.core.data.PetRepository
+import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
+import co.edu.uniquindio.adopcionmascota.features.feed.LocationFilter
+import co.edu.uniquindio.adopcionmascota.features.feed.Pet
+import co.edu.uniquindio.adopcionmascota.features.feed.PetType
+import co.edu.uniquindio.adopcionmascota.features.feed.PostStatus
 
 enum class PostCategory(val displayName: String, val emoji: String) {
     DOG("Perro", "🐕"),
@@ -217,6 +223,32 @@ class CreatePostsViewModel : ViewModel() {
             }
 
             delay(1200) // Simula la llamada a red / BD
+            val user = SessionManager.currentUser
+            PetRepository.add(
+                Pet(
+                    id = System.currentTimeMillis().toString(),
+                    name = currentState.title,
+                    type = when (currentState.selectedCategory) {
+                        PostCategory.DOG -> PetType.DOG
+                        PostCategory.CAT -> PetType.CAT
+                        PostCategory.RABBIT -> PetType.RABBIT
+                        PostCategory.BIRD -> PetType.BIRD
+                        else -> PetType.OTHER
+                    },
+                    breed = currentState.breed,
+                    age = currentState.age.ifBlank { "No especificada" },
+                    gender = "No especificado",
+                    size = currentState.selectedSize?.displayName ?: "",
+                    city = currentState.selectedLocation?.address ?: "",
+                    locationFilter = LocationFilter.IN_CITY,
+                    description = currentState.description,
+                    healthInfo = if (currentState.isVaccinated) listOf("Vacunas al día") else emptyList(),
+                    shelterName = user?.name ?: "Usuario",
+                    shelterContact = user?.email ?: "",
+                    authorId = user?.id ?: "demo",
+                    status = PostStatus.PENDING
+                )
+            )
 
             _uiState.update { state ->
                 state.copy(

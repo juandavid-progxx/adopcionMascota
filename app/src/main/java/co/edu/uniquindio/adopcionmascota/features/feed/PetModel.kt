@@ -4,9 +4,10 @@ enum class PetType(val displayName: String, val emoji: String) {
     ALL("Todos", "🐾"),
     DOG("Perros", "🐶"),
     CAT("Gatos", "🐱"),
-    RABBIT("Conejos", "🐰")
+    RABBIT("Conejos", "🐰"),
+    BIRD("Aves", "🦜"),
+    OTHER("Otros", "🐾")
 }
-
 enum class LocationFilter(val displayName: String, val iconText: String) {
     NEARBY("Cercanos", "📍"),
     IN_CITY("En la ciudad", "🏢"),

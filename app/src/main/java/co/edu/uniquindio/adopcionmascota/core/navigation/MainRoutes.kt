@@ -3,6 +3,8 @@ package co.edu.uniquindio.adopcionmascota.core.navigation
 import kotlinx.serialization.Serializable
 
 sealed class MainRoutes {
+    @Serializable
+    data object Moderation : MainRoutes()
 
     @Serializable
     data object Home : MainRoutes()
