@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import co.edu.uniquindio.adopcionmascota.core.data.NotificationRepository
 
 data class ModerationUiState(
     val selectedTab: Int = 0,
@@ -46,6 +47,12 @@ class ModerationViewModel : ViewModel() {
         PetRepository.update(pet.id) {
             it.copy(status = PostStatus.VERIFIED, rejectionReason = null)
         }
+        NotificationRepository.add(
+            userId = pet.authorId,
+            title = "Publicación verificada",
+            message = "Tu publicación \"${pet.name}\" fue verificada y ya es visible para todos.",
+            petId = pet.id
+        )
     }
 
     fun onRejectClick(pet: Pet) {
@@ -67,9 +74,16 @@ class ModerationViewModel : ViewModel() {
             _uiState.update { it.copy(reasonError = "Debes escribir el motivo del rechazo") }
             return
         }
+        val reason = state.rejectReason.trim()
         PetRepository.update(pet.id) {
-            it.copy(status = PostStatus.REJECTED, rejectionReason = state.rejectReason.trim())
+            it.copy(status = PostStatus.REJECTED, rejectionReason = reason)
         }
+        NotificationRepository.add(
+            userId = pet.authorId,
+            title = "Publicación rechazada",
+            message = "Tu publicación \"${pet.name}\" fue rechazada. Motivo: $reason",
+            petId = pet.id
+        )
         onDismissReject()
     }
 

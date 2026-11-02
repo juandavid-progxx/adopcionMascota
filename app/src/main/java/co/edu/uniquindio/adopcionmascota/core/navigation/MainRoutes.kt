@@ -15,7 +15,10 @@ sealed class MainRoutes {
     @Serializable
     data object Register : MainRoutes()
     @Serializable
-    data object Feed : MainRoutes()
+    data class Feed(val petId: String? = null) : MainRoutes()
+
+    @Serializable
+    data object Notifications : MainRoutes()
     @Serializable
     data object CreatePosts : MainRoutes()
 

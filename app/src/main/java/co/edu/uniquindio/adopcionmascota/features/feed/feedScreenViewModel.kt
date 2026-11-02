@@ -10,7 +10,7 @@ import androidx.lifecycle.viewModelScope
 import co.edu.uniquindio.adopcionmascota.core.data.PetRepository
 import kotlinx.coroutines.launch
 import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
-
+import co.edu.uniquindio.adopcionmascota.core.data.NotificationRepository
 data class FeedUiState(
     val searchQuery: String = "",
     val selectedPetType: PetType = PetType.ALL,
@@ -173,7 +173,8 @@ class FeedScreenViewModel : ViewModel() {
 
     fun onAddComment(pet: Pet, text: String) {
         if (text.isBlank()) return
-        val author = SessionManager.currentUser?.name ?: "Usuario"
+        val user = SessionManager.currentUser
+        val author = user?.name ?: "Usuario"
         PetRepository.update(pet.id) {
             it.copy(
                 comments = it.comments + Comment(
@@ -181,6 +182,15 @@ class FeedScreenViewModel : ViewModel() {
                     authorName = author,
                     text = text.trim()
                 )
+            )
+        }
+        // Avisar al autor (si quien comenta no es el mismo autor)
+        if (pet.authorId != user?.id) {
+            NotificationRepository.add(
+                userId = pet.authorId,
+                title = "Nuevo comentario",
+                message = "$author comentó en tu publicación \"${pet.name}\"",
+                petId = pet.id
             )
         }
     }
@@ -195,6 +205,9 @@ class FeedScreenViewModel : ViewModel() {
         _uiState.update { state ->
             state.copy(showPublishDialog = false)
         }
+    }
+    fun openPetById(id: String) {
+        PetRepository.pets.value.find { it.id == id }?.let { onPetSelectedForDetail(it) }
     }
 
     private fun filterPets(

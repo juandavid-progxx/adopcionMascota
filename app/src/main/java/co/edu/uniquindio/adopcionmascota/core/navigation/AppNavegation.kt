@@ -12,7 +12,8 @@ import co.edu.uniquindio.adopcionmascota.features.passwordRecovery.PasswordRecov
 import co.edu.uniquindio.adopcionmascota.features.register.RegisterScreen
 import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
 import co.edu.uniquindio.adopcionmascota.features.moderation.ModerationScreen
-
+import androidx.navigation.toRoute
+import co.edu.uniquindio.adopcionmascota.features.notifications.NotificationsScreen
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -34,7 +35,7 @@ fun AppNavigation() {
                     if (SessionManager.isModerator) {
                         navController.navigate(MainRoutes.Moderation) { popUpTo(MainRoutes.Home) }
                     } else {
-                        navController.navigate(MainRoutes.Feed)
+                        navController.navigate(MainRoutes.Feed())
                     }
                 },
                 onForgotPasswordClick = { navController.navigate(MainRoutes.PasswordRecovery) },
@@ -55,9 +56,23 @@ fun AppNavigation() {
                 }
             )
         }
-        composable<MainRoutes.Feed> {
+        composable<MainRoutes.Feed> { backStackEntry ->
+            val route = backStackEntry.toRoute<MainRoutes.Feed>()
             FeedScreen(
-                onCreatePostClick = { navController.navigate(MainRoutes.CreatePosts) }
+                initialPetId = route.petId,
+                onCreatePostClick = { navController.navigate(MainRoutes.CreatePosts) },
+                onNotificationsClick = { navController.navigate(MainRoutes.Notifications) },
+                onProfileClick = { /* Se conecta en el Paso 9 */ }
+            )
+        }
+        composable<MainRoutes.Notifications> {
+            NotificationsScreen(
+                onBack = { navController.popBackStack() },
+                onOpenPet = { petId ->
+                    navController.navigate(MainRoutes.Feed(petId)) {
+                        popUpTo<MainRoutes.Feed> { inclusive = true }
+                    }
+                }
             )
         }
         composable<MainRoutes.CreatePosts> {

@@ -51,6 +51,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,9 +67,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun FeedScreen(
     viewModel: FeedScreenViewModel = viewModel(),
-    onCreatePostClick: () -> Unit = {}
+    initialPetId: String? = null,
+    onCreatePostClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    LaunchedEffect(initialPetId) {
+        initialPetId?.let { viewModel.openPetById(it) }
+    }
 
     // Si hay una mascota seleccionada, mostramos la pantalla de Detalle
     val selectedPet = state.selectedPetForDetail
@@ -88,7 +95,13 @@ fun FeedScreen(
         bottomBar = {
             BottomNavigationBar(
                 selectedItem = state.selectedBottomNavItem,
-                onItemSelected = { viewModel.onBottomNavItemSelected(it) }
+                onItemSelected = {
+                    when (it) {
+                        BottomNavItem.ALERTS -> onNotificationsClick()
+                        BottomNavItem.PROFILE -> onProfileClick()
+                        else -> viewModel.onBottomNavItemSelected(it)
+                    }
+                }
             )
         },
         floatingActionButton = {
