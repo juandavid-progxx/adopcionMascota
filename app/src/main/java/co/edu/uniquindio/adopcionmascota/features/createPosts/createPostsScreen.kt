@@ -66,7 +66,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.core.util.RequestResult
 import co.edu.uniquindio.adopcionmascota.features.feed.PetCategory
-
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreatePostsScreen(
@@ -167,10 +176,10 @@ fun CreatePostsScreen(
 
             // 5. Campo de raza aproximada
             SectionHeader(title = "Raza aproximada *")
-            CustomOutlinedTextField(
-                value = state.breed,
-                onValueChange = { viewModel.onBreedChange(it) },
-                placeholder = "Ej: Golden Retriever, Mestiza o Desconocida",
+            BreedDropdown(
+                animal = state.selectedAnimal,
+                selected = state.breed,
+                onSelected = { viewModel.onBreedChange(it) },
                 isError = state.breedError != null,
                 errorMessage = state.breedError
             )
@@ -782,6 +791,118 @@ private fun PetCategorySelectionSection(
                     )
                 }
             }
+        }
+    }
+}
+@Composable
+private fun BreedDropdown(
+    animal: AnimalType?,
+    selected: String,
+    onSelected: (String) -> Unit,
+    isError: Boolean,
+    errorMessage: String?
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var fieldWidth by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
+
+    val breeds = when (animal) {
+        AnimalType.DOG -> listOf(
+            "Mestizo / Criollo", "Labrador", "Golden Retriever", "Pastor Alemán",
+            "Bulldog", "Chihuahua", "Poodle", "Beagle", "Pitbull", "Schnauzer",
+            "Husky Siberiano", "Otra raza", "Desconocida"
+        )
+        AnimalType.CAT -> listOf(
+            "Mestizo / Criollo", "Siamés", "Persa", "Angora", "Maine Coon",
+            "Bengalí", "Otra raza", "Desconocida"
+        )
+        AnimalType.RABBIT -> listOf(
+            "Mestizo", "Cabeza de León", "Enano", "Belier", "Gigante de Flandes",
+            "Otra raza", "Desconocida"
+        )
+        AnimalType.BIRD -> listOf(
+            "Canario", "Periquito", "Agapornis", "Cacatúa", "Loro",
+            "Otra especie", "Desconocida"
+        )
+        else -> listOf("Otra especie", "Desconocida")
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(
+                value = selected,
+                onValueChange = {},
+                readOnly = true,
+                placeholder = { Text("Selecciona una raza", color = Color.Gray) },
+                leadingIcon = { Text("🐾", fontSize = 18.sp) },
+                trailingIcon = {
+                    Icon(
+                        Icons.Default.ArrowDropDown,
+                        contentDescription = "Abrir lista",
+                        tint = Color(0xFF004D40),
+                        modifier = Modifier.size(32.dp)
+                    )
+                },
+                isError = isError,
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color(0xFFE8F0EC),
+                    unfocusedContainerColor = Color(0xFFE8F0EC),
+                    focusedBorderColor = Color(0xFF00BFA5),
+                    unfocusedBorderColor = Color(0xFFD0E0D8)
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { fieldWidth = with(density) { it.size.width.toDp() } }
+            )
+            // Capa transparente que recibe el toque para abrir la lista
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable { expanded = true }
+            )
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier
+                    .width(fieldWidth)
+                    .heightIn(max = 300.dp)
+                    .background(Color.White)
+            ) {
+                breeds.forEach { breed ->
+                    val isSelected = breed == selected
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = breed,
+                                fontSize = 16.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) Color(0xFF004D40) else Color.DarkGray
+                            )
+                        },
+                        trailingIcon = {
+                            if (isSelected) {
+                                Text("✓", color = Color(0xFF00BFA5), fontWeight = FontWeight.Bold)
+                            }
+                        },
+                        onClick = {
+                            onSelected(breed)
+                            expanded = false
+                        },
+                        modifier = Modifier.background(
+                            if (isSelected) Color(0xFFE0F2F1) else Color.Transparent
+                        )
+                    )
+                }
+            }
+        }
+        if (isError && errorMessage != null) {
+            Text(
+                text = errorMessage,
+                color = Color(0xFFB71C1C),
+                fontSize = 12.sp,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
         }
     }
 }

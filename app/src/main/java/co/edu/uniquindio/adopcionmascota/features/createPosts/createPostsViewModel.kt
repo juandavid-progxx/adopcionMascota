@@ -112,7 +112,8 @@ class CreatePostsViewModel : ViewModel() {
         _uiState.update { state ->
             state.copy(
                 selectedAnimal = category,
-                categoryError = null
+                categoryError = null,
+                breed = ""
             )
         }
     }
