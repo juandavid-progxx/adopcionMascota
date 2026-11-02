@@ -29,7 +29,8 @@ fun AppNavigation() {
             LoginScreen(
                 onLoginSuccess = { navController.navigate(MainRoutes.Feed) },
                 onForgotPasswordClick = { navController.navigate(MainRoutes.PasswordRecovery) },
-                onRegisterClick = { navController.navigate(MainRoutes.Register) }
+                onRegisterClick = { navController.navigate(MainRoutes.Register) },
+                onGoogleLoginClick = { navController.navigate(MainRoutes.Feed) }
             )
         }
         composable<MainRoutes.Register> {

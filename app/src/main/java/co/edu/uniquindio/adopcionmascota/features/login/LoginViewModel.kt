@@ -100,6 +100,22 @@ class LoginViewModel : ViewModel() {
             }
         }
     }
+    fun loginWithGoogle(onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(isLoggingIn = true, loginResult = RequestResult.Loading)
+            }
+            delay(1000) // Simula el flujo de Google. En la fase 3 aquí va Firebase Auth.
+            _uiState.update {
+                it.copy(
+                    isLoggingIn = false,
+                    loginResult = RequestResult.Success("¡Sesión iniciada con Google!")
+                )
+            }
+            delay(300)
+            onSuccess()
+        }
+    }
 
     private fun validateEmail(email: String): String? {
         return when {

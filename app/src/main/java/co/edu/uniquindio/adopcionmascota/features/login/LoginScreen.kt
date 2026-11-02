@@ -240,7 +240,7 @@ fun LoginScreen(
 
             // 9. Botón de inicio de sesión con Google
             OutlinedButton(
-                onClick = onGoogleLoginClick,
+                onClick = { viewModel.loginWithGoogle(onGoogleLoginClick) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
