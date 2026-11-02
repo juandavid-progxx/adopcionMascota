@@ -6,6 +6,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import androidx.lifecycle.viewModelScope
+import co.edu.uniquindio.adopcionmascota.core.data.PetRepository
+import kotlinx.coroutines.launch
 
 data class FeedUiState(
     val searchQuery: String = "",
@@ -27,6 +30,27 @@ class FeedScreenViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(FeedUiState())
     val uiState: StateFlow<FeedUiState> = _uiState.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            PetRepository.pets.collect { all ->
+                _uiState.update { state ->
+                    val visibles = all.filter { it.status == PostStatus.VERIFIED }
+                    state.copy(
+                        pets = visibles,
+                        filteredPets = filterPets(
+                            pets = visibles,
+                            query = state.searchQuery,
+                            type = state.selectedPetType,
+                            location = state.selectedLocation
+                        ),
+                        selectedPetForDetail = state.selectedPetForDetail?.let { sel ->
+                            all.find { it.id == sel.id }
+                        }
+                    )
+                }
+            }
+        }
+    }
     fun onSearchQueryChange(query: String) {
         _uiState.update { state ->
             val newFiltered = filterPets(
@@ -131,26 +155,7 @@ class FeedScreenViewModel : ViewModel() {
     }
 
     fun onToggleFavorite(pet: Pet) {
-        _uiState.update { state ->
-            val updatedPets = state.pets.map {
-                if (it.id == pet.id) it.copy(isFavorite = !it.isFavorite) else it
-            }
-            val newFiltered = filterPets(
-                pets = updatedPets,
-                query = state.searchQuery,
-                type = state.selectedPetType,
-                location = state.selectedLocation
-            )
-            val updatedSelectedDetail = if (state.selectedPetForDetail?.id == pet.id) {
-                state.selectedPetForDetail.copy(isFavorite = !state.selectedPetForDetail.isFavorite)
-            } else state.selectedPetForDetail
-
-            state.copy(
-                pets = updatedPets,
-                filteredPets = newFiltered,
-                selectedPetForDetail = updatedSelectedDetail
-            )
-        }
+        PetRepository.update(pet.id) { it.copy(isFavorite = !it.isFavorite) }
     }
 
     fun onFabClick() {

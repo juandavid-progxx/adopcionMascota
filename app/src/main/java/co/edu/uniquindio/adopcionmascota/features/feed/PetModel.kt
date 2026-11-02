@@ -24,6 +24,18 @@ enum class BottomNavItem(val title: String) {
     ALERTS("Alertas"),
     PROFILE("Perfil")
 }
+enum class PostStatus(val displayName: String) {
+    PENDING("Pendiente"),
+    VERIFIED("Verificada"),
+    REJECTED("Rechazada"),
+    RESOLVED("Resuelta")
+}
+
+data class Comment(
+    val id: String,
+    val authorName: String,
+    val text: String
+)
 
 data class Pet(
     val id: String,
@@ -40,7 +52,13 @@ data class Pet(
     val shelterName: String,
     val shelterContact: String,
     val isFavorite: Boolean = false,
-    val colorHex: Long = 0xFF80CBC4
+    val colorHex: Long = 0xFF80CBC4,
+    val authorId: String = "demo",
+    val status: PostStatus = PostStatus.VERIFIED,
+    val rejectionReason: String? = null,
+    val importantVotes: Int = 0,
+    val votedByMe: Boolean = false,
+    val comments: List<Comment> = emptyList()
 )
 
 val samplePets = listOf(
