@@ -16,7 +16,7 @@ import androidx.navigation.toRoute
 import co.edu.uniquindio.adopcionmascota.features.notifications.NotificationsScreen
 import co.edu.uniquindio.adopcionmascota.features.profile.ProfileScreen
 import co.edu.uniquindio.adopcionmascota.features.notifications.RequesterProfileScreen
-
+import co.edu.uniquindio.adopcionmascota.features.myposts.MyPostsScreen
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -91,7 +91,8 @@ fun AppNavigation() {
                     navController.navigate(MainRoutes.Home) {
                         popUpTo(MainRoutes.Home) { inclusive = true }
                     }
-                }
+                },
+                onMyPostsClick = { navController.navigate(MainRoutes.MyPosts) }
             )
         }
         composable<MainRoutes.RequesterProfile> { backStackEntry ->
@@ -105,6 +106,9 @@ fun AppNavigation() {
                     }
                 }
             )
+        }
+        composable<MainRoutes.MyPosts> {
+            MyPostsScreen(onBack = { navController.popBackStack() })
         }
         composable<MainRoutes.PasswordRecovery> {
             PasswordRecoveryScreen(

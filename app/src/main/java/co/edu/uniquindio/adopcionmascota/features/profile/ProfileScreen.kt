@@ -27,7 +27,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel(),
     onBack: () -> Unit = {},
-    onLoggedOut: () -> Unit = {}
+    onLoggedOut: () -> Unit = {},
+    onMyPostsClick: () -> Unit = {}
+
 ) {
     val state by viewModel.uiState.collectAsState()
     val user = state.user
@@ -100,6 +102,11 @@ fun ProfileScreen(
             }
 
             // Acciones
+            Button(
+                onClick = onMyPostsClick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF004D40))
+            ) { Text("Mis publicaciones") }
             Button(
                 onClick = { viewModel.onEditClick() },
                 modifier = Modifier.fillMaxWidth(),

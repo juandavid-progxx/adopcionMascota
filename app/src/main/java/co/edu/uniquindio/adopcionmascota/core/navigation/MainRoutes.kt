@@ -23,6 +23,8 @@ sealed class MainRoutes {
     data object CreatePosts : MainRoutes()
 
     @Serializable
+    data object MyPosts : MainRoutes()
+    @Serializable
     data object PasswordRecovery : MainRoutes()
     @Serializable
     data object Profile : MainRoutes()
