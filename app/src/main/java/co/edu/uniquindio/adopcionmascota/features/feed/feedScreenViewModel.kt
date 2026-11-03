@@ -186,7 +186,8 @@ class FeedScreenViewModel : ViewModel() {
                 comments = it.comments + Comment(
                     id = System.currentTimeMillis().toString(),
                     authorName = author,
-                    text = text.trim()
+                    text = text.trim(),
+                    authorId = user?.id ?: ""
                 )
             )
         }

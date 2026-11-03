@@ -28,7 +28,8 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel(),
     onBack: () -> Unit = {},
     onLoggedOut: () -> Unit = {},
-    onMyPostsClick: () -> Unit = {}
+    onMyPostsClick: () -> Unit = {},
+            onAchievementsClick: () -> Unit = {}
 
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -82,8 +83,56 @@ fun ProfileScreen(
                     Spacer(Modifier.height(10.dp))
                     Text(user?.name ?: "Usuario", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     Text(user?.email ?: "", fontSize = 14.sp, color = Color.Gray)
+                    Spacer(Modifier.height(6.dp))
+                    Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFB2DFDB)) {
+                        Text(
+                            text = "${state.level.emoji} Nivel ${state.level.number} · ${state.level.displayName}",
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF004D40)
+                        )
+                    }
                     if (!user?.phone.isNullOrBlank()) {
                         Text("Tel: ${user?.phone}", fontSize = 14.sp, color = Color.Gray)
+                    }
+                }
+            }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "⭐ Puntos de reputación",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            "${state.points}",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            color = Color(0xFF00897B)
+                        )
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    LinearProgressIndicator(
+                        progress = { state.level.progress(state.points) },
+                        modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)),
+                        color = Color(0xFF00BFA5),
+                        trackColor = Color(0xFFE0E0E0)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("${state.level.displayName} · ${state.points} pts", fontSize = 13.sp, color = Color.Gray)
+                        Text(
+                            text = state.level.next()?.let { "${it.displayName} a ${it.minPoints} pts" } ?: "¡Nivel máximo!",
+                            fontSize = 13.sp,
+                            color = Color.Gray
+                        )
                     }
                 }
             }
@@ -102,6 +151,11 @@ fun ProfileScreen(
             }
 
             // Acciones
+            Button(
+                onClick = onAchievementsClick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9A825))
+            ) { Text("🏆 Logros y reputación", color = Color.Black) }
             Button(
                 onClick = onMyPostsClick,
                 modifier = Modifier.fillMaxWidth(),

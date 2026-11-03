@@ -35,7 +35,8 @@ enum class PostStatus(val displayName: String) {
 data class Comment(
     val id: String,
     val authorName: String,
-    val text: String
+    val text: String,
+    val authorId: String = ""
 )
 enum class PetCategory(
     val displayName: String,

@@ -68,7 +68,8 @@ fun MyPostsScreen(
                         pet = pet,
                         onEdit = { viewModel.onEditClick(pet) },
                         onDelete = { viewModel.onDeleteClick(pet) },
-                        onResolve = { viewModel.onResolveClick(pet) }
+                        onResolve = { viewModel.onResolveClick(pet) },
+                        onReactivate = { viewModel.onReactivate(pet) }
                     )
                 }
             }
@@ -157,7 +158,8 @@ private fun MyPostCard(
     pet: Pet,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    onResolve: () -> Unit
+    onResolve: () -> Unit,
+    onReactivate: () -> Unit
 ) {
     val (chipBg, chipText) = when (pet.status) {
         PostStatus.PENDING -> Color(0xFFFFF3E0) to Color(0xFFE65100)
@@ -243,6 +245,15 @@ private fun MyPostCard(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00BFA5))
                     ) {
                         Text("Resolver", fontSize = 13.sp, color = Color.White)
+                    }
+                }
+                if (pet.status == PostStatus.RESOLVED) {
+                    Button(
+                        onClick = onReactivate,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1565C0))
+                    ) {
+                        Text("Reactivar", fontSize = 13.sp, color = Color.White)
                     }
                 }
             }

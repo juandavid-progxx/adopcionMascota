@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import co.edu.uniquindio.adopcionmascota.core.data.ReputationManager
+import co.edu.uniquindio.adopcionmascota.core.data.UserLevel
+
 
 data class ProfileUiState(
     val user: User? = null,
@@ -22,7 +25,9 @@ data class ProfileUiState(
     val editName: String = "",
     val editPhone: String = "",
     val nameError: String? = null,
-    val showDeleteDialog: Boolean = false
+    val showDeleteDialog: Boolean = false,
+    val points: Int = 0,
+    val level: UserLevel = UserLevel.FRIEND
 )
 
 class ProfileViewModel : ViewModel() {
@@ -35,11 +40,14 @@ class ProfileViewModel : ViewModel() {
             PetRepository.pets.collect { all ->
                 val myId = SessionManager.currentUser?.id
                 val mine = all.filter { it.authorId == myId }
+                val stats = ReputationManager.statsFor(myId ?: "", all)
                 _uiState.update {
                     it.copy(
                         active = mine.count { p -> p.status == PostStatus.VERIFIED },
                         resolved = mine.count { p -> p.status == PostStatus.RESOLVED },
-                        pending = mine.count { p -> p.status == PostStatus.PENDING }
+                        pending = mine.count { p -> p.status == PostStatus.PENDING },
+                        points = stats.points,
+                        level = UserLevel.forPoints(stats.points)
                     )
                 }
             }
