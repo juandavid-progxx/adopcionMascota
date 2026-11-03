@@ -121,4 +121,9 @@ class MyPostsViewModel : ViewModel() {
         }
         onDismissResolve()
     }
+    fun onReactivate(pet: Pet) {
+        PetRepository.update(pet.id) {
+            it.copy(status = PostStatus.PENDING, rejectionReason = null)
+        }
+    }
 }

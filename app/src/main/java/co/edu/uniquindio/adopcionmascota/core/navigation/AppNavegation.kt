@@ -17,6 +17,7 @@ import co.edu.uniquindio.adopcionmascota.features.notifications.NotificationsScr
 import co.edu.uniquindio.adopcionmascota.features.profile.ProfileScreen
 import co.edu.uniquindio.adopcionmascota.features.notifications.RequesterProfileScreen
 import co.edu.uniquindio.adopcionmascota.features.myposts.MyPostsScreen
+import co.edu.uniquindio.adopcionmascota.features.achievements.AchievementsScreen
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -92,7 +93,8 @@ fun AppNavigation() {
                         popUpTo(MainRoutes.Home) { inclusive = true }
                     }
                 },
-                onMyPostsClick = { navController.navigate(MainRoutes.MyPosts) }
+                onMyPostsClick = { navController.navigate(MainRoutes.MyPosts) },
+                onAchievementsClick = { navController.navigate(MainRoutes.Achievements) }
             )
         }
         composable<MainRoutes.RequesterProfile> { backStackEntry ->
@@ -109,6 +111,9 @@ fun AppNavigation() {
         }
         composable<MainRoutes.MyPosts> {
             MyPostsScreen(onBack = { navController.popBackStack() })
+        }
+        composable<MainRoutes.Achievements> {
+            AchievementsScreen(onBack = { navController.popBackStack() })
         }
         composable<MainRoutes.PasswordRecovery> {
             PasswordRecoveryScreen(
