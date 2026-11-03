@@ -250,3 +250,51 @@ fun PetCategory.resolveLabel(): String = when (this) {
     PetCategory.TEMPORARY -> "Marcar hogar encontrado"
     PetCategory.VETERINARY -> "Marcar como finalizada"
 }
+// Qué campos del formulario aplican a cada categoría
+data class CategoryFields(
+    val animal: Boolean,
+    val breed: Boolean,
+    val age: Boolean,
+    val size: Boolean,
+    val vaccines: Boolean
+)
+
+fun PetCategory.fields(): CategoryFields = when (this) {
+    PetCategory.ADOPTION -> CategoryFields(animal = true, breed = true, age = true, size = true, vaccines = true)
+    PetCategory.LOST -> CategoryFields(animal = true, breed = true, age = true, size = true, vaccines = false)
+    PetCategory.FOUND -> CategoryFields(animal = true, breed = true, age = false, size = true, vaccines = false)
+    PetCategory.TEMPORARY -> CategoryFields(animal = true, breed = true, age = true, size = true, vaccines = true)
+    PetCategory.VETERINARY -> CategoryFields(animal = false, breed = false, age = false, size = false, vaccines = false)
+}
+
+fun PetCategory.titleExample(): String = when (this) {
+    PetCategory.ADOPTION -> "Ej: Luna busca un hogar lleno de amor"
+    PetCategory.LOST -> "Ej: Se perdió Rocky cerca del parque Sucre"
+    PetCategory.FOUND -> "Ej: Encontré un gato atigrado en el barrio Centenario"
+    PetCategory.TEMPORARY -> "Ej: Nala necesita hogar de paso por 3 semanas"
+    PetCategory.VETERINARY -> "Ej: Jornada de vacunación gratuita en el parque principal"
+}
+
+fun PetCategory.descriptionLabel(): String = when (this) {
+    PetCategory.ADOPTION -> "Descripción *"
+    PetCategory.LOST -> "Descripción y señas particulares *"
+    PetCategory.FOUND -> "Descripción y estado en que la encontraste *"
+    PetCategory.TEMPORARY -> "Descripción y tiempo que se necesita *"
+    PetCategory.VETERINARY -> "Descripción de la jornada (fecha, horario y servicios) *"
+}
+
+fun PetCategory.locationLabel(): String = when (this) {
+    PetCategory.ADOPTION -> "Ubicación *"
+    PetCategory.LOST -> "¿Dónde se perdió? *"
+    PetCategory.FOUND -> "¿Dónde la encontraste? *"
+    PetCategory.TEMPORARY -> "Ubicación del hogar de paso *"
+    PetCategory.VETERINARY -> "¿Dónde será la jornada? *"
+}
+
+fun PetCategory.publishLabel(): String = when (this) {
+    PetCategory.ADOPTION -> "Publicar adopción"
+    PetCategory.LOST -> "Publicar mascota perdida"
+    PetCategory.FOUND -> "Publicar mascota encontrada"
+    PetCategory.TEMPORARY -> "Publicar hogar de paso"
+    PetCategory.VETERINARY -> "Publicar jornada"
+}

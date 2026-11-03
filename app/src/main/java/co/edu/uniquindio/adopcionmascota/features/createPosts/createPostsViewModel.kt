@@ -16,6 +16,7 @@ import co.edu.uniquindio.adopcionmascota.features.feed.Pet
 import co.edu.uniquindio.adopcionmascota.features.feed.PetType
 import co.edu.uniquindio.adopcionmascota.features.feed.PostStatus
 import co.edu.uniquindio.adopcionmascota.features.feed.PetCategory
+import co.edu.uniquindio.adopcionmascota.features.feed.fields
 enum class AnimalType(val displayName: String, val emoji: String) {
     DOG("Perro", "🐕"),
     CAT("Gato", "🐈"),
@@ -195,9 +196,10 @@ class CreatePostsViewModel : ViewModel() {
 
         // Validación exhaustiva antes de publicar
         val titleErr = if (currentState.title.isBlank()) "El título es obligatorio" else null
-        val breedErr = if (currentState.breed.isBlank()) "La raza es obligatoria" else null
-        val categoryErr = if (currentState.selectedAnimal == null) "Selecciona una categoría" else null
-        val sizeErr = if (currentState.selectedSize == null) "Selecciona un tamaño" else null
+        val fields = currentState.selectedPetCategory.fields()
+        val breedErr = if (fields.breed && currentState.breed.isBlank()) "La raza es obligatoria" else null
+        val categoryErr = if (fields.animal && currentState.selectedAnimal == null) "Selecciona el tipo de animal" else null
+        val sizeErr = if (fields.size && currentState.selectedSize == null) "Selecciona un tamaño" else null
         val descErr = if (currentState.description.isBlank()) "La descripción es obligatoria" else null
         val locErr = if (currentState.selectedLocation == null) "Selecciona una ubicación en el mapa" else null
         val photosErr = if (currentState.photos.isEmpty()) "Debes agregar al menos una foto" else null
@@ -235,21 +237,21 @@ class CreatePostsViewModel : ViewModel() {
                 Pet(
                     id = System.currentTimeMillis().toString(),
                     name = currentState.title,
-                    type = when (currentState.selectedAnimal) {
+                    type = if (!fields.animal) PetType.OTHER else when (currentState.selectedAnimal) {
                         AnimalType.DOG -> PetType.DOG
                         AnimalType.CAT -> PetType.CAT
                         AnimalType.RABBIT -> PetType.RABBIT
                         AnimalType.BIRD -> PetType.BIRD
                         else -> PetType.OTHER
                     },
-                    breed = currentState.breed,
-                    age = currentState.age.ifBlank { "No especificada" },
-                    gender = "No especificado",
-                    size = currentState.selectedSize?.displayName ?: "",
+                    breed = if (fields.breed) currentState.breed else "Jornada veterinaria",
+                    age = if (!fields.animal) "No aplica" else currentState.age.ifBlank { "No especificada" },
+                    gender = if (fields.animal) "No especificado" else "Evento",
+                    size = if (!fields.animal) "No aplica" else (currentState.selectedSize?.displayName ?: ""),
                     city = currentState.selectedLocation?.address ?: "",
                     locationFilter = LocationFilter.IN_CITY,
                     description = currentState.description,
-                    healthInfo = if (currentState.isVaccinated) listOf("Vacunas al día") else emptyList(),
+                    healthInfo = if (fields.vaccines && currentState.isVaccinated) listOf("Vacunas al día") else emptyList(),
                     shelterName = user?.name ?: "Usuario",
                     shelterContact = user?.email ?: "",
                     authorId = user?.id ?: "demo",

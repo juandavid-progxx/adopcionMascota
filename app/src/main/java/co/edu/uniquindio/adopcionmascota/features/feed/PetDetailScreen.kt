@@ -220,72 +220,76 @@ fun PetDetailScreen(
                             )
                         }
                     }
-
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color(0xFFB2DFDB)
-                    ) {
-                        Text(
-                            text = pet.age,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF004D40)
-                        )
+                    if (pet.age != "No aplica") {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color(0xFFB2DFDB)
+                        ) {
+                            Text(
+                                text = pet.age,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF004D40)
+                            )
+                        }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Fila de características
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    InfoCard(
-                        title = "Especie",
-                        value = pet.type.displayName,
-                        modifier = Modifier.weight(1f)
+                if (pet.category != PetCategory.VETERINARY) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        InfoCard(
+                            title = "Especie",
+                            value = pet.type.displayName,
+                            modifier = Modifier.weight(1f)
+                        )
+                        InfoCard(
+                            title = "Tamaño",
+                            value = pet.size,
+                            modifier = Modifier.weight(1f)
+                        )
+                        InfoCard(
+                            title = "Género",
+                            value = pet.gender,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Historia y Descripción
+                    Text(
+                        text = "Sobre ${pet.name}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1B5E20)
                     )
-                    InfoCard(
-                        title = "Tamaño",
-                        value = pet.size,
-                        modifier = Modifier.weight(1f)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = pet.description,
+                        fontSize = 15.sp,
+                        color = Color.DarkGray,
+                        lineHeight = 22.sp
                     )
-                    InfoCard(
-                        title = "Género",
-                        value = pet.gender,
-                        modifier = Modifier.weight(1f)
-                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Historia y Descripción
-                Text(
-                    text = "Sobre ${pet.name}",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1B5E20)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = pet.description,
-                    fontSize = 15.sp,
-                    color = Color.DarkGray,
-                    lineHeight = 22.sp
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
                 // Salud y vacunas
-                Text(
-                    text = "Estado de Salud",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1B5E20)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
+                if (pet.healthInfo.isNotEmpty()) {
+                    Text(
+                        text = "Estado de Salud",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1B5E20)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)

@@ -76,6 +76,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import co.edu.uniquindio.adopcionmascota.features.feed.descriptionLabel
+import co.edu.uniquindio.adopcionmascota.features.feed.fields
+import co.edu.uniquindio.adopcionmascota.features.feed.locationLabel
+import co.edu.uniquindio.adopcionmascota.features.feed.publishLabel
+import co.edu.uniquindio.adopcionmascota.features.feed.titleExample
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreatePostsScreen(
@@ -83,6 +88,7 @@ fun CreatePostsScreen(
     onBack: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val fields = state.selectedPetCategory.fields()
 
     Scaffold(
         topBar = {
@@ -156,58 +162,70 @@ fun CreatePostsScreen(
                 selected = state.selectedPetCategory,
                 onSelected = { viewModel.onPetCategorySelected(it) }
             )
-            SectionHeader(title = "Tipo de animal *")
-            CategorySelectionSection(
-                selectedCategory = state.selectedAnimal,
-                onCategorySelected = { viewModel.onCategorySelected(it) }
-            )
-            state.categoryError?.let { ErrorText(text = it) }
+            // 3. Tipo de animal (no aplica en Veterinaria)
+            if (fields.animal) {
+                SectionHeader(title = "Tipo de animal *")
+                CategorySelectionSection(
+                    selectedCategory = state.selectedAnimal,
+                    onCategorySelected = { viewModel.onCategorySelected(it) }
+                )
+                state.categoryError?.let { ErrorText(text = it) }
+            }
 
-
-            // 4. Campo de título
+            // 4. Título
             SectionHeader(title = "Título *")
             CustomOutlinedTextField(
                 value = state.title,
                 onValueChange = { viewModel.onTitleChange(it) },
-                placeholder = "Ej: Luna busca un hogar lleno de amor",
+                placeholder = state.selectedPetCategory.titleExample(),
                 isError = state.titleError != null,
                 errorMessage = state.titleError
             )
 
-            // 5. Campo de raza aproximada
-            SectionHeader(title = "Raza aproximada *")
-            BreedDropdown(
-                animal = state.selectedAnimal,
-                selected = state.breed,
-                onSelected = { viewModel.onBreedChange(it) },
-                isError = state.breedError != null,
-                errorMessage = state.breedError
-            )
+            // 5. Raza (lista desplegable)
+            if (fields.breed) {
+                SectionHeader(title = "Raza aproximada *")
+                BreedDropdown(
+                    animal = state.selectedAnimal,
+                    selected = state.breed,
+                    onSelected = { viewModel.onBreedChange(it) },
+                    isError = state.breedError != null,
+                    errorMessage = state.breedError
+                )
+            }
 
-            // 6. Campo de edad
-            SectionHeader(title = "Edad")
-            CustomOutlinedTextField(
-                value = state.age,
-                onValueChange = { viewModel.onAgeChange(it) },
-                placeholder = "Ej: 2 años, 5 meses"
-            )
+            // 6. Edad
+            if (fields.age) {
+                SectionHeader(title = "Edad")
+                CustomOutlinedTextField(
+                    value = state.age,
+                    onValueChange = { viewModel.onAgeChange(it) },
+                    placeholder = "Ej: 2 años, 5 meses"
+                )
+            }
 
-            // 7. Selector de tamaño
-            SectionHeader(title = "Tamaño *")
-            SizeSelectionSection(
-                selectedSize = state.selectedSize,
-                onSizeSelected = { viewModel.onSizeSelected(it) }
-            )
-            state.sizeError?.let { ErrorText(text = it) }
+            // 7. Tamaño
+            if (fields.size) {
+                SectionHeader(title = "Tamaño *")
+                SizeSelectionSection(
+                    selectedSize = state.selectedSize,
+                    onSizeSelected = { viewModel.onSizeSelected(it) }
+                )
+                state.sizeError?.let { ErrorText(text = it) }
+            }
 
-            // 8. Interruptor de vacunación
-            VaccinationSwitchCard(
-                isVaccinated = state.isVaccinated,
-                onVaccinatedChange = { viewModel.onVaccinatedChange(it) }
-            )
+            // 8. Vacunas
+            if (fields.vaccines) {
+                VaccinationSwitchCard(
+                    isVaccinated = state.isVaccinated,
+                    onVaccinatedChange = { viewModel.onVaccinatedChange(it) }
+                )
+            }
+
+
 
             // 9. Campo de descripción
-            SectionHeader(title = "Descripción *")
+            SectionHeader(title = state.selectedPetCategory.descriptionLabel())
             DescriptionTextField(
                 value = state.description,
                 onValueChange = { viewModel.onDescriptionChange(it) },
@@ -217,7 +235,7 @@ fun CreatePostsScreen(
             )
 
             // 10. Selección de ubicación en el mapa
-            SectionHeader(title = "Ubicación * (lat/lng se guardan automáticamente)")
+            SectionHeader(title = state.selectedPetCategory.locationLabel())
             LocationSelectionSection(
                 location = state.selectedLocation,
                 onOpenMap = { viewModel.onOpenMapSelector() }
@@ -243,7 +261,7 @@ fun CreatePostsScreen(
                     )
                 } else {
                     Text(
-                        text = "Publicar Mascota",
+                        text = state.selectedPetCategory.publishLabel(),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = Color.White

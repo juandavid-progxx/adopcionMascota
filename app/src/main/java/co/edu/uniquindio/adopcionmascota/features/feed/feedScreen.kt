@@ -597,7 +597,9 @@ private fun PetCardItem(
                             color = Color(0xFF1B5E20)
                         )
                         Text(
-                            text = "${pet.category.emoji} ${pet.category.displayName} • ${pet.age} • ${pet.size}",
+                            text = listOf("${pet.category.emoji} ${pet.category.displayName}", pet.age, pet.size)
+                                .filter { it != "No aplica" }
+                                .joinToString(" • "),
                             fontSize = 13.sp,
                             color = Color.Gray
                         )
