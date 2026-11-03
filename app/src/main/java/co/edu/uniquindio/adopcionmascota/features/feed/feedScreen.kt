@@ -64,6 +64,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 
 @Composable
 fun FeedScreen(
@@ -98,6 +100,7 @@ fun FeedScreen(
         bottomBar = {
             BottomNavigationBar(
                 selectedItem = state.selectedBottomNavItem,
+                alertCount = state.unreadNotifications,
                 onItemSelected = {
                     when (it) {
                         BottomNavItem.ALERTS -> onNotificationsClick()
@@ -748,6 +751,7 @@ private fun MapViewSimulated(
 @Composable
 private fun BottomNavigationBar(
     selectedItem: BottomNavItem,
+    alertCount: Int = 0,
     onItemSelected: (BottomNavItem) -> Unit
 ) {
     Surface(
@@ -785,12 +789,22 @@ private fun BottomNavigationBar(
                             .padding(8.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = item.title,
-                            tint = if (isSelected) Color(0xFF004D40) else Color.Gray,
-                            modifier = Modifier.size(22.dp)
-                        )
+                        BadgedBox(
+                            badge = {
+                                if (item == BottomNavItem.ALERTS && alertCount > 0) {
+                                    Badge {
+                                        Text(if (alertCount > 9) "9+" else alertCount.toString())
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = item.title,
+                                tint = if (isSelected) Color(0xFF004D40) else Color.Gray,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
                     Text(
                         text = item.title,
