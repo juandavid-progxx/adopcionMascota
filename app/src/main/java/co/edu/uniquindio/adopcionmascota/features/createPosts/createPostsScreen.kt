@@ -65,7 +65,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.core.util.RequestResult
-
+import co.edu.uniquindio.adopcionmascota.features.feed.PetCategory
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import co.edu.uniquindio.adopcionmascota.features.feed.descriptionLabel
+import co.edu.uniquindio.adopcionmascota.features.feed.fields
+import co.edu.uniquindio.adopcionmascota.features.feed.locationLabel
+import co.edu.uniquindio.adopcionmascota.features.feed.publishLabel
+import co.edu.uniquindio.adopcionmascota.features.feed.titleExample
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreatePostsScreen(
@@ -73,6 +88,7 @@ fun CreatePostsScreen(
     onBack: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val fields = state.selectedPetCategory.fields()
 
     Scaffold(
         topBar = {
@@ -140,57 +156,76 @@ fun CreatePostsScreen(
             state.photosError?.let { ErrorText(text = it) }
 
             // 3. Selección de categoría
-            SectionHeader(title = "Categoría *")
-            CategorySelectionSection(
-                selectedCategory = state.selectedCategory,
-                onCategorySelected = { viewModel.onCategorySelected(it) }
-            )
-            state.categoryError?.let { ErrorText(text = it) }
 
-            // 4. Campo de título
+            SectionHeader(title = "Categoría *")
+            PetCategorySelectionSection(
+                selected = state.selectedPetCategory,
+                onSelected = { viewModel.onPetCategorySelected(it) }
+            )
+            // 3. Tipo de animal (no aplica en Veterinaria)
+            if (fields.animal) {
+                SectionHeader(title = "Tipo de animal *")
+                CategorySelectionSection(
+                    selectedCategory = state.selectedAnimal,
+                    onCategorySelected = { viewModel.onCategorySelected(it) }
+                )
+                state.categoryError?.let { ErrorText(text = it) }
+            }
+
+            // 4. Título
             SectionHeader(title = "Título *")
             CustomOutlinedTextField(
                 value = state.title,
                 onValueChange = { viewModel.onTitleChange(it) },
-                placeholder = "Ej: Luna busca un hogar lleno de amor",
+                placeholder = state.selectedPetCategory.titleExample(),
                 isError = state.titleError != null,
                 errorMessage = state.titleError
             )
 
-            // 5. Campo de raza aproximada
-            SectionHeader(title = "Raza aproximada *")
-            CustomOutlinedTextField(
-                value = state.breed,
-                onValueChange = { viewModel.onBreedChange(it) },
-                placeholder = "Ej: Golden Retriever, Mestiza o Desconocida",
-                isError = state.breedError != null,
-                errorMessage = state.breedError
-            )
+            // 5. Raza (lista desplegable)
+            if (fields.breed) {
+                SectionHeader(title = "Raza aproximada *")
+                BreedDropdown(
+                    animal = state.selectedAnimal,
+                    selected = state.breed,
+                    onSelected = { viewModel.onBreedChange(it) },
+                    isError = state.breedError != null,
+                    errorMessage = state.breedError
+                )
+            }
 
-            // 6. Campo de edad
-            SectionHeader(title = "Edad")
-            CustomOutlinedTextField(
-                value = state.age,
-                onValueChange = { viewModel.onAgeChange(it) },
-                placeholder = "Ej: 2 años, 5 meses"
-            )
+            // 6. Edad
+            if (fields.age) {
+                SectionHeader(title = "Edad")
+                CustomOutlinedTextField(
+                    value = state.age,
+                    onValueChange = { viewModel.onAgeChange(it) },
+                    placeholder = "Ej: 2 años, 5 meses"
+                )
+            }
 
-            // 7. Selector de tamaño
-            SectionHeader(title = "Tamaño *")
-            SizeSelectionSection(
-                selectedSize = state.selectedSize,
-                onSizeSelected = { viewModel.onSizeSelected(it) }
-            )
-            state.sizeError?.let { ErrorText(text = it) }
+            // 7. Tamaño
+            if (fields.size) {
+                SectionHeader(title = "Tamaño *")
+                SizeSelectionSection(
+                    selectedSize = state.selectedSize,
+                    onSizeSelected = { viewModel.onSizeSelected(it) }
+                )
+                state.sizeError?.let { ErrorText(text = it) }
+            }
 
-            // 8. Interruptor de vacunación
-            VaccinationSwitchCard(
-                isVaccinated = state.isVaccinated,
-                onVaccinatedChange = { viewModel.onVaccinatedChange(it) }
-            )
+            // 8. Vacunas
+            if (fields.vaccines) {
+                VaccinationSwitchCard(
+                    isVaccinated = state.isVaccinated,
+                    onVaccinatedChange = { viewModel.onVaccinatedChange(it) }
+                )
+            }
+
+
 
             // 9. Campo de descripción
-            SectionHeader(title = "Descripción *")
+            SectionHeader(title = state.selectedPetCategory.descriptionLabel())
             DescriptionTextField(
                 value = state.description,
                 onValueChange = { viewModel.onDescriptionChange(it) },
@@ -200,7 +235,7 @@ fun CreatePostsScreen(
             )
 
             // 10. Selección de ubicación en el mapa
-            SectionHeader(title = "Ubicación * (lat/lng se guardan automáticamente)")
+            SectionHeader(title = state.selectedPetCategory.locationLabel())
             LocationSelectionSection(
                 location = state.selectedLocation,
                 onOpenMap = { viewModel.onOpenMapSelector() }
@@ -226,7 +261,7 @@ fun CreatePostsScreen(
                     )
                 } else {
                     Text(
-                        text = "Publicar Mascota",
+                        text = state.selectedPetCategory.publishLabel(),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = Color.White
@@ -440,15 +475,15 @@ private fun PhotoSelectionSection(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CategorySelectionSection(
-    selectedCategory: PostCategory?,
-    onCategorySelected: (PostCategory) -> Unit
+    selectedCategory: AnimalType?,
+    onCategorySelected: (AnimalType) -> Unit
 ) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        PostCategory.values().forEach { category ->
+        AnimalType.values().forEach { category ->
             val isSelected = category == selectedCategory
             val bgColor = if (isSelected) Color(0xFF80CBC4) else Color(0xFFE8F0EC)
             val textColor = if (isSelected) Color(0xFF004D40) else Color.DarkGray
@@ -733,6 +768,159 @@ private fun LocationSelectionSection(
                     )
                 }
             }
+        }
+    }
+}
+@Composable
+private fun PetCategorySelectionSection(
+    selected: PetCategory,
+    onSelected: (PetCategory) -> Unit
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        PetCategory.values().forEach { category ->
+            val isSelected = category == selected
+            val bgColor = if (isSelected) Color(0xFF80CBC4) else Color(0xFFE8F0EC)
+            val textColor = if (isSelected) Color(0xFF004D40) else Color.DarkGray
+            val borderColor = if (isSelected) Color(0xFF004D40) else Color(0xFFD0E0D8)
+
+            Surface(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable { onSelected(category) }
+                    .border(1.dp, borderColor, RoundedCornerShape(20.dp)),
+                color = bgColor,
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = category.emoji, fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = category.displayName,
+                        fontSize = 14.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = textColor
+                    )
+                }
+            }
+        }
+    }
+}
+@Composable
+private fun BreedDropdown(
+    animal: AnimalType?,
+    selected: String,
+    onSelected: (String) -> Unit,
+    isError: Boolean,
+    errorMessage: String?
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var fieldWidth by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
+
+    val breeds = when (animal) {
+        AnimalType.DOG -> listOf(
+            "Mestizo / Criollo", "Labrador", "Golden Retriever", "Pastor Alemán",
+            "Bulldog", "Chihuahua", "Poodle", "Beagle", "Pitbull", "Schnauzer",
+            "Husky Siberiano", "Otra raza", "Desconocida"
+        )
+        AnimalType.CAT -> listOf(
+            "Mestizo / Criollo", "Siamés", "Persa", "Angora", "Maine Coon",
+            "Bengalí", "Otra raza", "Desconocida"
+        )
+        AnimalType.RABBIT -> listOf(
+            "Mestizo", "Cabeza de León", "Enano", "Belier", "Gigante de Flandes",
+            "Otra raza", "Desconocida"
+        )
+        AnimalType.BIRD -> listOf(
+            "Canario", "Periquito", "Agapornis", "Cacatúa", "Loro",
+            "Otra especie", "Desconocida"
+        )
+        else -> listOf("Otra especie", "Desconocida")
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(
+                value = selected,
+                onValueChange = {},
+                readOnly = true,
+                placeholder = { Text("Selecciona una raza", color = Color.Gray) },
+                leadingIcon = { Text("🐾", fontSize = 18.sp) },
+                trailingIcon = {
+                    Icon(
+                        Icons.Default.ArrowDropDown,
+                        contentDescription = "Abrir lista",
+                        tint = Color(0xFF004D40),
+                        modifier = Modifier.size(32.dp)
+                    )
+                },
+                isError = isError,
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color(0xFFE8F0EC),
+                    unfocusedContainerColor = Color(0xFFE8F0EC),
+                    focusedBorderColor = Color(0xFF00BFA5),
+                    unfocusedBorderColor = Color(0xFFD0E0D8)
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { fieldWidth = with(density) { it.size.width.toDp() } }
+            )
+            // Capa transparente que recibe el toque para abrir la lista
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable { expanded = true }
+            )
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier
+                    .width(fieldWidth)
+                    .heightIn(max = 300.dp)
+                    .background(Color.White)
+            ) {
+                breeds.forEach { breed ->
+                    val isSelected = breed == selected
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = breed,
+                                fontSize = 16.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) Color(0xFF004D40) else Color.DarkGray
+                            )
+                        },
+                        trailingIcon = {
+                            if (isSelected) {
+                                Text("✓", color = Color(0xFF00BFA5), fontWeight = FontWeight.Bold)
+                            }
+                        },
+                        onClick = {
+                            onSelected(breed)
+                            expanded = false
+                        },
+                        modifier = Modifier.background(
+                            if (isSelected) Color(0xFFE0F2F1) else Color.Transparent
+                        )
+                    )
+                }
+            }
+        }
+        if (isError && errorMessage != null) {
+            Text(
+                text = errorMessage,
+                color = Color(0xFFB71C1C),
+                fontSize = 12.sp,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
         }
     }
 }

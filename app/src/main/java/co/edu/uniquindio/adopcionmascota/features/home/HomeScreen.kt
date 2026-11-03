@@ -105,7 +105,7 @@ fun HomeScreen(
                 // Nombre AdoptaYa
                 Text(
                     text = "AdoptaYa",
-                    fontSize = 20.sp,
+                    fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
@@ -114,11 +114,11 @@ fun HomeScreen(
 
                 // Mensaje exacto de bienvenida
                 Text(
-                    text = "Explora las mascotas que buscan una familia y descubre el amor incondicional que tienen para ofrecer.",
-                    fontSize = 11.sp,
+                    text = "Adopta, reporta mascotas perdidas o encontradas, ofrece un hogar de paso y entérate de jornadas veterinarias. Todo en un solo lugar.",
+                    fontSize = 17.sp,
                     color = Color.White.copy(alpha = 0.95f),
                     textAlign = TextAlign.Center,
-                    lineHeight = 16.sp,
+                    lineHeight = 24.sp,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
             }
@@ -134,14 +134,14 @@ fun HomeScreen(
             Column {
                 Text(
                     text = "¿Cómo quieres continuar?",
-                    fontSize = 15.sp,
+                    fontSize = 19.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF263238)
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "Selecciona el tipo de acceso que necesitas",
-                    fontSize = 11.sp,
+                    fontSize = 14.sp,
                     color = Color(0xFF607D8B)
                 )
             }
@@ -193,7 +193,7 @@ fun HomeScreen(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Adopta, publica y conecta con la comunidad.",
+                                    text = "Publica, busca y ayuda a las mascotas de tu comunidad.",
                                     fontSize = 11.sp,
                                     color = Color(0xFF607D8B)
                                 )
@@ -242,7 +242,6 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
                     .clickable {
-                        viewModel.selectModeratorRole()
                         onModeratorAccessClick()
                     }
                     .border(1.dp, Color(0xFFCFD8D5), RoundedCornerShape(16.dp)),

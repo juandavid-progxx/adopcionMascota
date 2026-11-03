@@ -51,6 +51,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,13 +63,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
 
 @Composable
 fun FeedScreen(
     viewModel: FeedScreenViewModel = viewModel(),
-    onCreatePostClick: () -> Unit = {}
+    initialPetId: String? = null,
+    onCreatePostClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    LaunchedEffect(initialPetId) {
+        initialPetId?.let { viewModel.openPetById(it) }
+    }
 
     // Si hay una mascota seleccionada, mostramos la pantalla de Detalle
     val selectedPet = state.selectedPetForDetail
@@ -77,8 +85,12 @@ fun FeedScreen(
             pet = selectedPet,
             onBack = { viewModel.onCloseDetail() },
             onAdoptClick = { viewModel.onAdoptClick(it) },
-            onToggleFavorite = { viewModel.onToggleFavorite(it) }
+            onToggleFavorite = { viewModel.onToggleFavorite(it) },
+            onVote = { viewModel.onVote(it) },
+            onComment = { pet, text -> viewModel.onAddComment(pet, text) }
         )
+        RequestDialogs(state = state, viewModel = viewModel)
+        ResolveDialog(state = state, viewModel = viewModel)
         return
     }
 
@@ -86,7 +98,13 @@ fun FeedScreen(
         bottomBar = {
             BottomNavigationBar(
                 selectedItem = state.selectedBottomNavItem,
-                onItemSelected = { viewModel.onBottomNavItemSelected(it) }
+                onItemSelected = {
+                    when (it) {
+                        BottomNavItem.ALERTS -> onNotificationsClick()
+                        BottomNavItem.PROFILE -> onProfileClick()
+                        else -> viewModel.onBottomNavItemSelected(it)
+                    }
+                }
             )
         },
         floatingActionButton = {
@@ -123,9 +141,9 @@ fun FeedScreen(
             )
 
             // 2. Filtros por tipo de mascota
-            PetTypeFilterRow(
-                selectedType = state.selectedPetType,
-                onTypeSelected = { viewModel.onPetTypeSelected(it) }
+            CategoryFilterRow(
+                selectedCategory = state.selectedCategory,
+                onCategorySelected = { viewModel.onCategorySelected(it) }
             )
 
             // 3. Filtros por ubicación
@@ -182,6 +200,7 @@ fun FeedScreen(
             }
         }
     }
+    ResolveDialog(state = state, viewModel = viewModel)
 
     // Diálogo de confirmación para adopción
     state.adoptionDialogPet?.let { pet ->
@@ -189,14 +208,14 @@ fun FeedScreen(
             onDismissRequest = { viewModel.onDismissAdoptionDialog() },
             title = {
                 Text(
-                    text = "Adoptar a ${pet.name}",
+                    text = "${pet.category.actionLabel}: ${pet.name}",
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF004D40)
                 )
             },
             text = {
                 Text(
-                    text = "¿Deseas iniciar el proceso de adopción para ${pet.name}? Nos pondremos en contacto con el refugio '${pet.shelterName}' para coordinar la visita.",
+                    text = pet.category.requestMessage.replace("{name}", pet.name),
                     fontSize = 14.sp
                 )
             },
@@ -205,7 +224,7 @@ fun FeedScreen(
                     onClick = { viewModel.onConfirmAdoption(pet) },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00BFA5))
                 ) {
-                    Text("Confirmar Adopción", color = Color.White)
+                    Text("Confirmar", color = Color.White)
                 }
             },
             dismissButton = {
@@ -224,7 +243,7 @@ fun FeedScreen(
             onDismissRequest = { viewModel.onDismissSuccessMessage() },
             title = {
                 Text(
-                    text = "🎉 ¡Felicidades!",
+                    text = "✅ ¡Solicitud enviada!",
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1B5E20)
                 )
@@ -578,7 +597,9 @@ private fun PetCardItem(
                             color = Color(0xFF1B5E20)
                         )
                         Text(
-                            text = "${pet.age} • ${pet.gender} • ${pet.size}",
+                            text = listOf("${pet.category.emoji} ${pet.category.displayName}", pet.age, pet.size)
+                                .filter { it != "No aplica" }
+                                .joinToString(" • "),
                             fontSize = 13.sp,
                             color = Color.Gray
                         )
@@ -597,7 +618,7 @@ private fun PetCardItem(
                         )
                     ) {
                         Text(
-                            text = "Adoptar",
+                            text = if (pet.authorId == SessionManager.currentUser?.id) "Marcar resuelta" else pet.category.shortLabel,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = Color.White
@@ -780,5 +801,115 @@ private fun BottomNavigationBar(
                 }
             }
         }
+    }
+}
+@Composable
+private fun CategoryFilterRow(
+    selectedCategory: PetCategory?,
+    onCategorySelected: (PetCategory?) -> Unit
+) {
+    val options: List<PetCategory?> = listOf(null) + PetCategory.values().toList()
+
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
+    ) {
+        items(options) { category ->
+            val isSelected = category == selectedCategory
+            val backgroundColor = if (isSelected) Color(0xFFB2DFDB) else Color.White
+            val contentColor = if (isSelected) Color(0xFF004D40) else Color.DarkGray
+            val borderColor = if (isSelected) Color(0xFF80CBC4) else Color(0xFFE0E0E0)
+
+            Surface(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable { onCategorySelected(category) }
+                    .border(1.dp, borderColor, RoundedCornerShape(20.dp)),
+                color = backgroundColor,
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = category?.emoji ?: "🐾", fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = category?.displayName ?: "Todas",
+                        fontSize = 14.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = contentColor
+                    )
+                }
+            }
+        }
+    }
+}
+@Composable
+private fun AdoptionDialogs(
+    state: FeedUiState,
+    viewModel: FeedScreenViewModel
+) {
+    // Diálogo de confirmación de la solicitud
+    state.adoptionDialogPet?.let { pet ->
+        AlertDialog(
+            onDismissRequest = { viewModel.onDismissAdoptionDialog() },
+            title = {
+                Text(
+                    text = "${pet.category.actionLabel}: ${pet.name}",
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF004D40)
+                )
+            },
+            text = {
+                Text(
+                    text = pet.category.requestMessage.replace("{name}", pet.name),
+                    fontSize = 14.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.onConfirmAdoption(pet) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00BFA5))
+                ) {
+                    Text("Confirmar", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onDismissAdoptionDialog() }) {
+                    Text("Cancelar", color = Color.Gray)
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = Color.White
+        )
+    }
+
+    // Mensaje de éxito
+    state.adoptionSuccessMessage?.let { message ->
+        AlertDialog(
+            onDismissRequest = { viewModel.onDismissSuccessMessage() },
+            title = {
+                Text(
+                    text = "✅ ¡Solicitud enviada!",
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1B5E20)
+                )
+            },
+            text = { Text(text = message) },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.onDismissSuccessMessage() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00BFA5))
+                ) {
+                    Text("Entendido", color = Color.White)
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = Color.White
+        )
     }
 }

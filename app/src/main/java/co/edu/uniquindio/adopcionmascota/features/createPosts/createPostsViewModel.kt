@@ -9,8 +9,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-enum class PostCategory(val displayName: String, val emoji: String) {
+import co.edu.uniquindio.adopcionmascota.core.data.PetRepository
+import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
+import co.edu.uniquindio.adopcionmascota.features.feed.LocationFilter
+import co.edu.uniquindio.adopcionmascota.features.feed.Pet
+import co.edu.uniquindio.adopcionmascota.features.feed.PetType
+import co.edu.uniquindio.adopcionmascota.features.feed.PostStatus
+import co.edu.uniquindio.adopcionmascota.features.feed.PetCategory
+import co.edu.uniquindio.adopcionmascota.features.feed.fields
+enum class AnimalType(val displayName: String, val emoji: String) {
     DOG("Perro", "🐕"),
     CAT("Gato", "🐈"),
     RABBIT("Conejo", "🐇"),
@@ -32,7 +39,8 @@ data class PostLocation(
 
 data class CreatePostUiState(
     val photos: List<String> = listOf("foto_luna_1.jpg", "foto_luna_2.jpg"),
-    val selectedCategory: PostCategory? = PostCategory.DOG,
+    val selectedAnimal: AnimalType? = AnimalType.DOG,
+    val selectedPetCategory: PetCategory = PetCategory.ADOPTION,
     val title: String = "",
     val breed: String = "",
     val age: String = "",
@@ -50,13 +58,14 @@ data class CreatePostUiState(
     val locationError: String? = null,
     val photosError: String? = null,
     val publishResult: RequestResult? = null
+
 ) {
     val maxDescriptionLength: Int = 500
 
     val isFormValid: Boolean
         get() = title.isNotBlank() &&
                 breed.isNotBlank() &&
-                selectedCategory != null &&
+                selectedAnimal != null &&
                 selectedSize != null &&
                 description.isNotBlank() &&
                 selectedLocation != null &&
@@ -96,15 +105,20 @@ class CreatePostsViewModel : ViewModel() {
             )
         }
     }
+    fun onPetCategorySelected(category: PetCategory) {
+        _uiState.update { it.copy(selectedPetCategory = category) }
+    }
 
-    fun onCategorySelected(category: PostCategory) {
+    fun onCategorySelected(category: AnimalType) {
         _uiState.update { state ->
             state.copy(
-                selectedCategory = category,
-                categoryError = null
+                selectedAnimal = category,
+                categoryError = null,
+                breed = ""
             )
         }
     }
+
 
     fun onTitleChange(newTitle: String) {
         _uiState.update { state ->
@@ -182,9 +196,10 @@ class CreatePostsViewModel : ViewModel() {
 
         // Validación exhaustiva antes de publicar
         val titleErr = if (currentState.title.isBlank()) "El título es obligatorio" else null
-        val breedErr = if (currentState.breed.isBlank()) "La raza es obligatoria" else null
-        val categoryErr = if (currentState.selectedCategory == null) "Selecciona una categoría" else null
-        val sizeErr = if (currentState.selectedSize == null) "Selecciona un tamaño" else null
+        val fields = currentState.selectedPetCategory.fields()
+        val breedErr = if (fields.breed && currentState.breed.isBlank()) "La raza es obligatoria" else null
+        val categoryErr = if (fields.animal && currentState.selectedAnimal == null) "Selecciona el tipo de animal" else null
+        val sizeErr = if (fields.size && currentState.selectedSize == null) "Selecciona un tamaño" else null
         val descErr = if (currentState.description.isBlank()) "La descripción es obligatoria" else null
         val locErr = if (currentState.selectedLocation == null) "Selecciona una ubicación en el mapa" else null
         val photosErr = if (currentState.photos.isEmpty()) "Debes agregar al menos una foto" else null
@@ -217,6 +232,33 @@ class CreatePostsViewModel : ViewModel() {
             }
 
             delay(1200) // Simula la llamada a red / BD
+            val user = SessionManager.currentUser
+            PetRepository.add(
+                Pet(
+                    id = System.currentTimeMillis().toString(),
+                    name = currentState.title,
+                    type = if (!fields.animal) PetType.OTHER else when (currentState.selectedAnimal) {
+                        AnimalType.DOG -> PetType.DOG
+                        AnimalType.CAT -> PetType.CAT
+                        AnimalType.RABBIT -> PetType.RABBIT
+                        AnimalType.BIRD -> PetType.BIRD
+                        else -> PetType.OTHER
+                    },
+                    breed = if (fields.breed) currentState.breed else "Jornada veterinaria",
+                    age = if (!fields.animal) "No aplica" else currentState.age.ifBlank { "No especificada" },
+                    gender = if (fields.animal) "No especificado" else "Evento",
+                    size = if (!fields.animal) "No aplica" else (currentState.selectedSize?.displayName ?: ""),
+                    city = currentState.selectedLocation?.address ?: "",
+                    locationFilter = LocationFilter.IN_CITY,
+                    description = currentState.description,
+                    healthInfo = if (fields.vaccines && currentState.isVaccinated) listOf("Vacunas al día") else emptyList(),
+                    shelterName = user?.name ?: "Usuario",
+                    shelterContact = user?.email ?: "",
+                    authorId = user?.id ?: "demo",
+                    category = currentState.selectedPetCategory,
+                    status = PostStatus.PENDING
+                )
+            )
 
             _uiState.update { state ->
                 state.copy(

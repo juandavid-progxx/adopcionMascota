@@ -4,9 +4,10 @@ enum class PetType(val displayName: String, val emoji: String) {
     ALL("Todos", "🐾"),
     DOG("Perros", "🐶"),
     CAT("Gatos", "🐱"),
-    RABBIT("Conejos", "🐰")
+    RABBIT("Conejos", "🐰"),
+    BIRD("Aves", "🦜"),
+    OTHER("Otros", "🐾")
 }
-
 enum class LocationFilter(val displayName: String, val iconText: String) {
     NEARBY("Cercanos", "📍"),
     IN_CITY("En la ciudad", "🏢"),
@@ -24,6 +25,46 @@ enum class BottomNavItem(val title: String) {
     ALERTS("Alertas"),
     PROFILE("Perfil")
 }
+enum class PostStatus(val displayName: String) {
+    PENDING("Pendiente"),
+    VERIFIED("Verificada"),
+    REJECTED("Rechazada"),
+    RESOLVED("Resuelta")
+}
+
+data class Comment(
+    val id: String,
+    val authorName: String,
+    val text: String
+)
+enum class PetCategory(
+    val displayName: String,
+    val emoji: String,
+    val shortLabel: String,      // texto del botón en la tarjeta
+    val actionLabel: String,     // texto del botón en el detalle
+    val requestMessage: String   // texto del cuadro de confirmación
+) {
+    ADOPTION(
+        "Adopción", "🏠", "Adoptar", "Me interesa adoptar",
+        "¿Deseas enviar tu solicitud de adopción para {name}? El autor de la publicación la recibirá y se pondrá en contacto contigo."
+    ),
+    LOST(
+        "Perdidos", "🔍", "Tengo info", "Tengo información",
+        "¿Tienes información sobre {name}? Avisaremos al dueño para que se comunique contigo."
+    ),
+    FOUND(
+        "Encontrados", "📍", "Es mía", "Creo que es mi mascota",
+        "¿Crees que {name} es tu mascota? Avisaremos a quien la encontró para que te contacte."
+    ),
+    TEMPORARY(
+        "Temporal", "🤝", "Ofrecer hogar", "Ofrezco hogar de paso",
+        "¿Quieres ofrecer un hogar de paso para {name}? El autor recibirá tu ofrecimiento."
+    ),
+    VETERINARY(
+        "Veterinaria", "💉", "Me interesa", "Me interesa",
+        "¿Te interesa \"{name}\"? Avisaremos al organizador."
+    )
+}
 
 data class Pet(
     val id: String,
@@ -40,7 +81,14 @@ data class Pet(
     val shelterName: String,
     val shelterContact: String,
     val isFavorite: Boolean = false,
-    val colorHex: Long = 0xFF80CBC4
+    val colorHex: Long = 0xFF80CBC4,
+    val authorId: String = "demo",
+    val status: PostStatus = PostStatus.VERIFIED,
+    val rejectionReason: String? = null,
+    val importantVotes: Int = 0,
+    val votedByMe: Boolean = false,
+    val comments: List<Comment> = emptyList(),
+    val category: PetCategory = PetCategory.ADOPTION
 )
 
 val samplePets = listOf(
@@ -123,5 +171,130 @@ val samplePets = listOf(
         shelterName = "Fundación Adopta Un Amigo",
         shelterContact = "+57 300 888 9900",
         colorHex = 0xFFF8BBD0
+    ),
+    Pet(
+        id = "6",
+        name = "Rocky",
+        type = PetType.DOG,
+        breed = "Labrador",
+        age = "4 años",
+        gender = "Macho",
+        size = "Grande",
+        city = "Armenia, Quindío",
+        locationFilter = LocationFilter.IN_CITY,
+        description = "Se perdió cerca del parque Sucre el domingo. Tiene collar azul y responde a su nombre.",
+        healthInfo = listOf("Vacunas al día"),
+        shelterName = "Carlos Gómez",
+        shelterContact = "+57 311 222 3344",
+        category = PetCategory.LOST,
+        colorHex = 0xFFFFCCBC
+    ),
+    Pet(
+        id = "7",
+        name = "Gato atigrado",
+        type = PetType.CAT,
+        breed = "Mestizo",
+        age = "Adulto",
+        gender = "Macho",
+        size = "Mediano",
+        city = "Armenia, Quindío",
+        locationFilter = LocationFilter.NEARBY,
+        description = "Lo encontré en el barrio Centenario, muy manso y con collar rojo sin placa.",
+        healthInfo = emptyList(),
+        shelterName = "María Rojas",
+        shelterContact = "+57 314 777 8899",
+        category = PetCategory.FOUND,
+        colorHex = 0xFFFFF9C4
+    ),
+    Pet(
+        id = "8",
+        name = "Jornada de vacunación gratuita",
+        type = PetType.OTHER,
+        breed = "Todas las razas",
+        age = "No aplica",
+        gender = "No aplica",
+        size = "No aplica",
+        city = "Calarcá, Quindío",
+        locationFilter = LocationFilter.NEARBY,
+        description = "Vacunación antirrábica y esterilización gratuita para perros y gatos este sábado en el parque principal.",
+        healthInfo = listOf("Vacunación gratuita", "Esterilización"),
+        shelterName = "Secretaría de Salud",
+        shelterContact = "+57 606 123 4567",
+        category = PetCategory.VETERINARY,
+        colorHex = 0xFFBBDEFB
+    ),
+    Pet(
+        id = "9",
+        name = "Nala",
+        type = PetType.DOG,
+        breed = "Criolla",
+        age = "1 año",
+        gender = "Hembra",
+        size = "Mediano",
+        city = "Armenia, Quindío",
+        locationFilter = LocationFilter.IN_CITY,
+        description = "Necesita un hogar de paso por 3 semanas mientras se recupera de una cirugía.",
+        healthInfo = listOf("Vacunas al día", "Esterilizada"),
+        shelterName = "Hogar de Paso Patitas",
+        shelterContact = "+57 316 555 0000",
+        category = PetCategory.TEMPORARY,
+        colorHex = 0xFFD7CCC8
     )
+
+
 )
+fun PetCategory.resolveLabel(): String = when (this) {
+    PetCategory.ADOPTION -> "Marcar como adoptada"
+    PetCategory.LOST -> "Marcar como encontrada"
+    PetCategory.FOUND -> "Marcar como entregada"
+    PetCategory.TEMPORARY -> "Marcar hogar encontrado"
+    PetCategory.VETERINARY -> "Marcar como finalizada"
+}
+// Qué campos del formulario aplican a cada categoría
+data class CategoryFields(
+    val animal: Boolean,
+    val breed: Boolean,
+    val age: Boolean,
+    val size: Boolean,
+    val vaccines: Boolean
+)
+
+fun PetCategory.fields(): CategoryFields = when (this) {
+    PetCategory.ADOPTION -> CategoryFields(animal = true, breed = true, age = true, size = true, vaccines = true)
+    PetCategory.LOST -> CategoryFields(animal = true, breed = true, age = true, size = true, vaccines = false)
+    PetCategory.FOUND -> CategoryFields(animal = true, breed = true, age = false, size = true, vaccines = false)
+    PetCategory.TEMPORARY -> CategoryFields(animal = true, breed = true, age = true, size = true, vaccines = true)
+    PetCategory.VETERINARY -> CategoryFields(animal = false, breed = false, age = false, size = false, vaccines = false)
+}
+
+fun PetCategory.titleExample(): String = when (this) {
+    PetCategory.ADOPTION -> "Ej: Luna busca un hogar lleno de amor"
+    PetCategory.LOST -> "Ej: Se perdió Rocky cerca del parque Sucre"
+    PetCategory.FOUND -> "Ej: Encontré un gato atigrado en el barrio Centenario"
+    PetCategory.TEMPORARY -> "Ej: Nala necesita hogar de paso por 3 semanas"
+    PetCategory.VETERINARY -> "Ej: Jornada de vacunación gratuita en el parque principal"
+}
+
+fun PetCategory.descriptionLabel(): String = when (this) {
+    PetCategory.ADOPTION -> "Descripción *"
+    PetCategory.LOST -> "Descripción y señas particulares *"
+    PetCategory.FOUND -> "Descripción y estado en que la encontraste *"
+    PetCategory.TEMPORARY -> "Descripción y tiempo que se necesita *"
+    PetCategory.VETERINARY -> "Descripción de la jornada (fecha, horario y servicios) *"
+}
+
+fun PetCategory.locationLabel(): String = when (this) {
+    PetCategory.ADOPTION -> "Ubicación *"
+    PetCategory.LOST -> "¿Dónde se perdió? *"
+    PetCategory.FOUND -> "¿Dónde la encontraste? *"
+    PetCategory.TEMPORARY -> "Ubicación del hogar de paso *"
+    PetCategory.VETERINARY -> "¿Dónde será la jornada? *"
+}
+
+fun PetCategory.publishLabel(): String = when (this) {
+    PetCategory.ADOPTION -> "Publicar adopción"
+    PetCategory.LOST -> "Publicar mascota perdida"
+    PetCategory.FOUND -> "Publicar mascota encontrada"
+    PetCategory.TEMPORARY -> "Publicar hogar de paso"
+    PetCategory.VETERINARY -> "Publicar jornada"
+}

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
 
 data class LoginUiState(
     val email: String = "",
@@ -82,6 +83,7 @@ class LoginViewModel : ViewModel() {
             // Validación de credenciales de prueba o cualquier correo/password válido
             val isSuccess = (state.email.isNotBlank() && state.password.length >= 3)
             if (isSuccess) {
+                SessionManager.login(state.email)
                 _uiState.update {
                     it.copy(
                         isLoggingIn = false,
@@ -98,6 +100,23 @@ class LoginViewModel : ViewModel() {
                     )
                 }
             }
+        }
+    }
+    fun loginWithGoogle(onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(isLoggingIn = true, loginResult = RequestResult.Loading)
+            }
+            delay(1000) // Simula el flujo de Google. En la fase 3 aquí va Firebase Auth.
+            SessionManager.loginWithGoogle()
+            _uiState.update {
+                it.copy(
+                    isLoggingIn = false,
+                    loginResult = RequestResult.Success("¡Sesión iniciada con Google!")
+                )
+            }
+            delay(300)
+            onSuccess()
         }
     }
 
