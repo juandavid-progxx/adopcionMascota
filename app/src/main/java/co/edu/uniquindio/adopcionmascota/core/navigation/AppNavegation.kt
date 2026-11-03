@@ -66,18 +66,16 @@ fun AppNavigation() {
                 initialPetId = route.petId,
                 onCreatePostClick = { navController.navigate(MainRoutes.CreatePosts) },
                 onNotificationsClick = { navController.navigate(MainRoutes.Notifications) },
-                onProfileClick = { navController.navigate(MainRoutes.Profile) }
+                onProfileClick = { navController.navigate(MainRoutes.Profile) },
+                onBackFromDetail = { navController.popBackStack() }
             )
         }
         composable<MainRoutes.Notifications> {
             NotificationsScreen(
                 onBack = { navController.popBackStack() },
-                onOpenPet = { petId ->
-                    navController.navigate(MainRoutes.Feed(petId)) {
-                        popUpTo<MainRoutes.Feed> { inclusive = true }
-                    }
-                },
-                onOpenRequester = { id -> navController.navigate(MainRoutes.RequesterProfile(id)) }
+                onOpenPet = { petId -> navController.navigate(MainRoutes.Feed(petId)) },
+                onOpenRequester = { id -> navController.navigate(MainRoutes.RequesterProfile(id)) },
+                onOpenAchievements = { navController.navigate(MainRoutes.Achievements) }
             )
         }
         composable<MainRoutes.CreatePosts> {
@@ -103,9 +101,8 @@ fun AppNavigation() {
                 notificationId = route.notificationId,
                 onBack = { navController.popBackStack() },
                 onOpenPet = { petId ->
-                    navController.navigate(MainRoutes.Feed(petId)) {
-                        popUpTo<MainRoutes.Feed> { inclusive = true }
-                    }
+                    navController.navigate(MainRoutes.Feed(petId))
+
                 }
             )
         }

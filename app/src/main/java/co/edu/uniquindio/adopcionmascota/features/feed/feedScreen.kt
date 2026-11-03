@@ -73,7 +73,8 @@ fun FeedScreen(
     initialPetId: String? = null,
     onCreatePostClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onBackFromDetail: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     LaunchedEffect(initialPetId) {
@@ -85,7 +86,10 @@ fun FeedScreen(
     if (selectedPet != null) {
         PetDetailScreen(
             pet = selectedPet,
-            onBack = { viewModel.onCloseDetail() },
+            onBack = {
+                if (initialPetId != null) onBackFromDetail()   // vino desde una notificación: volver atrás
+                else viewModel.onCloseDetail()                 // vino desde el feed: cerrar el detalle
+            },
             onAdoptClick = { viewModel.onAdoptClick(it) },
             onToggleFavorite = { viewModel.onToggleFavorite(it) },
             onVote = { viewModel.onVote(it) },
