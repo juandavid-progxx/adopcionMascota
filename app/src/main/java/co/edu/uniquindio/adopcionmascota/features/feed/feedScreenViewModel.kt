@@ -26,7 +26,8 @@ data class FeedUiState(
     val resolveDialogPet: Pet? = null,
     val adoptionSuccessMessage: String? = null,
     val showPublishDialog: Boolean = false,
-    val requestResult: RequestResult? = null
+    val requestResult: RequestResult? = null,
+    val unreadNotifications: Int = 0
 )
 
 // Aplica todos los filtros activos sobre la lista de publicaciones visibles
@@ -63,6 +64,14 @@ class FeedScreenViewModel : ViewModel() {
                             all.find { it.id == sel.id }
                         }
                     ).withFilters()
+                }
+            }
+        }
+        viewModelScope.launch {
+            NotificationRepository.all.collect { all ->
+                val me = SessionManager.currentUser?.id
+                _uiState.update {
+                    it.copy(unreadNotifications = all.count { n -> n.userId == me && !n.isRead })
                 }
             }
         }

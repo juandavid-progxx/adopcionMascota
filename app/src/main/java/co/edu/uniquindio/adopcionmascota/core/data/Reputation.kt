@@ -84,7 +84,8 @@ object ReputationManager {
                 userId = userId,
                 title = "¡Subiste de nivel!",
                 message = "Ahora eres ${level.displayName} ${level.emoji}. ¡Sigue ayudando a las mascotas!",
-                petId = null
+                petId = null,
+                isAchievement = true
             )
         }
         lastLevel[userId] = level
@@ -97,7 +98,8 @@ object ReputationManager {
                     userId = userId,
                     title = "¡Nuevo logro desbloqueado!",
                     message = "Obtuviste la insignia \"${badge.title}\" ${badge.emoji}. ¡Sigue así!",
-                    petId = null
+                    petId = null,
+                    isAchievement = true
                 )
             }
         }

@@ -17,7 +17,8 @@ data class AppNotification(
     // Datos de contacto de quien envió la solicitud (solo en solicitudes)
     val contactName: String? = null,
     val contactEmail: String? = null,
-    val contactPhone: String? = null
+    val contactPhone: String? = null,
+    val isAchievement: Boolean = false
 )
 
 object NotificationRepository {
@@ -32,7 +33,8 @@ object NotificationRepository {
         petId: String?,
         contactName: String? = null,
         contactEmail: String? = null,
-        contactPhone: String? = null
+        contactPhone: String? = null,
+        isAchievement: Boolean = false
     ) {
         val notification = AppNotification(
             id = UUID.randomUUID().toString(),
@@ -42,7 +44,8 @@ object NotificationRepository {
             petId = petId,
             contactName = contactName,
             contactEmail = contactEmail,
-            contactPhone = contactPhone
+            contactPhone = contactPhone,
+            isAchievement = isAchievement
         )
         _all.update { listOf(notification) + it }
     }

@@ -34,7 +34,8 @@ fun NotificationsScreen(
     viewModel: NotificationsViewModel = viewModel(),
     onBack: () -> Unit = {},
     onOpenPet: (String) -> Unit = {},
-    onOpenRequester: (String) -> Unit = {}
+    onOpenRequester: (String) -> Unit = {},
+    onOpenAchievements: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -68,10 +69,10 @@ fun NotificationsScreen(
                         n = n,
                         onClick = {
                             viewModel.onOpen(n)
-                            if (n.contactName != null) {
-                                onOpenRequester(n.id)           // solicitud: ver perfil de contacto
-                            } else {
-                                n.petId?.let { onOpenPet(it) }  // el resto: abrir la publicación
+                            when {
+                                n.contactName != null -> onOpenRequester(n.id)   // solicitud: perfil de contacto
+                                n.isAchievement -> onOpenAchievements()           // logro o nivel: pantalla de logros
+                                else -> n.petId?.let { onOpenPet(it) }            // el resto: la publicación
                             }
                         },
                         onToggleRead = { viewModel.onToggleRead(n) }
