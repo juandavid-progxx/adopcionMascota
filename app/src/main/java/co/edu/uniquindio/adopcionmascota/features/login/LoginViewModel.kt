@@ -83,10 +83,29 @@ class LoginViewModel : ViewModel() {
         }
     }
 
-    // Se reemplaza por el login real con Google en el paso 2b
-    fun loginWithGoogle(onSuccess: () -> Unit = {}) {
-        _uiState.update {
-            it.copy(loginResult = RequestResult.Failure("El inicio con Google se activa en el siguiente paso."))
+   //Función de iniciar sesión con Google
+    fun loginWithGoogle(getToken: suspend () -> String, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoggingIn = true, loginResult = RequestResult.Loading) }
+            try {
+                val idToken = getToken()
+                AuthRepository.loginWithGoogle(idToken)
+                _uiState.update {
+                    it.copy(
+                        isLoggingIn = false,
+                        loginResult = RequestResult.Success("¡Sesión iniciada con Google!")
+                    )
+                }
+                delay(300)
+                onSuccess()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoggingIn = false,
+                        loginResult = RequestResult.Failure(AuthRepository.friendlyError(e))
+                    )
+                }
+            }
         }
     }
 

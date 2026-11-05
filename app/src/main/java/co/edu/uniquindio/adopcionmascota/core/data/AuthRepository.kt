@@ -8,7 +8,9 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.firestore.FirebaseFirestore
-
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
+import com.google.firebase.auth.GoogleAuthProvider
 object AuthRepository {
 
     private val auth get() = FirebaseAuth.getInstance()
@@ -33,6 +35,11 @@ object AuthRepository {
     suspend fun login(email: String, password: String) {
         val uid = auth.signInWithEmailAndPassword(email.trim(), password).await().user!!.uid
         loadProfile(uid)
+    }
+    suspend fun loginWithGoogle(idToken: String) {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        val uid = auth.signInWithCredential(credential).await().user!!.uid
+        loadProfile(uid) // si es la primera vez, crea su perfil en Firestore
     }
 
     // Lee el perfil (nombre, rol...) del usuario desde Firestore
@@ -70,6 +77,8 @@ object AuthRepository {
         is FirebaseAuthInvalidUserException -> "No existe una cuenta con ese correo."
         is FirebaseAuthInvalidCredentialsException -> "Correo o contraseña incorrectos."
         is FirebaseNetworkException -> "Sin conexión a internet."
+        is GetCredentialCancellationException -> "Inicio de sesión con Google cancelado."
+        is NoCredentialException -> "No hay una cuenta de Google en este dispositivo."
         else -> "Ocurrió un error: ${e.localizedMessage ?: "intenta de nuevo"}"
     }
 }
