@@ -49,7 +49,10 @@ fun AppNavigation() {
         }
         composable<MainRoutes.Register> {
             RegisterScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onRegistered = {
+                    navController.navigate(MainRoutes.Feed()) { popUpTo(MainRoutes.Home)}
+                }
             )
         }
         composable<MainRoutes.Moderation> {
