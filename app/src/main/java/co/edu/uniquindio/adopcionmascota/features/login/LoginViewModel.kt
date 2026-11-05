@@ -3,6 +3,7 @@ package co.edu.uniquindio.adopcionmascota.features.login
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.edu.uniquindio.adopcionmascota.core.data.AuthRepository
 import co.edu.uniquindio.adopcionmascota.core.util.RequestResult
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,7 +11,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
 
 data class LoginUiState(
     val email: String = "",
@@ -33,21 +33,11 @@ class LoginViewModel : ViewModel() {
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
     fun onEmailChange(newEmail: String) {
-        _uiState.update { state ->
-            state.copy(
-                email = newEmail,
-                emailError = validateEmail(newEmail)
-            )
-        }
+        _uiState.update { it.copy(email = newEmail, emailError = validateEmail(newEmail)) }
     }
 
     fun onPasswordChange(newPassword: String) {
-        _uiState.update { state ->
-            state.copy(
-                password = newPassword,
-                passwordError = validatePassword(newPassword)
-            )
-        }
+        _uiState.update { it.copy(password = newPassword, passwordError = validatePassword(newPassword)) }
     }
 
     fun resetForm() {
@@ -71,19 +61,9 @@ class LoginViewModel : ViewModel() {
         }
 
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(
-                    isLoggingIn = true,
-                    loginResult = RequestResult.Loading
-                )
-            }
-
-            delay(1000) // Simulación de verificación con el servicio de autenticación
-
-            // Validación de credenciales de prueba o cualquier correo/password válido
-            val isSuccess = (state.email.isNotBlank() && state.password.length >= 3)
-            if (isSuccess) {
-                SessionManager.login(state.email)
+            _uiState.update { it.copy(isLoggingIn = true, loginResult = RequestResult.Loading) }
+            try {
+                AuthRepository.login(state.email, state.password)
                 _uiState.update {
                     it.copy(
                         isLoggingIn = false,
@@ -92,31 +72,40 @@ class LoginViewModel : ViewModel() {
                 }
                 delay(300)
                 onSuccess()
-            } else {
+            } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
                         isLoggingIn = false,
-                        loginResult = RequestResult.Failure("Correo o contraseña incorrectos.")
+                        loginResult = RequestResult.Failure(AuthRepository.friendlyError(e))
                     )
                 }
             }
         }
     }
-    fun loginWithGoogle(onSuccess: () -> Unit = {}) {
+
+   //Función de iniciar sesión con Google
+    fun loginWithGoogle(getToken: suspend () -> String, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(isLoggingIn = true, loginResult = RequestResult.Loading)
+            _uiState.update { it.copy(isLoggingIn = true, loginResult = RequestResult.Loading) }
+            try {
+                val idToken = getToken()
+                AuthRepository.loginWithGoogle(idToken)
+                _uiState.update {
+                    it.copy(
+                        isLoggingIn = false,
+                        loginResult = RequestResult.Success("¡Sesión iniciada con Google!")
+                    )
+                }
+                delay(300)
+                onSuccess()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoggingIn = false,
+                        loginResult = RequestResult.Failure(AuthRepository.friendlyError(e))
+                    )
+                }
             }
-            delay(1000) // Simula el flujo de Google. En la fase 3 aquí va Firebase Auth.
-            SessionManager.loginWithGoogle()
-            _uiState.update {
-                it.copy(
-                    isLoggingIn = false,
-                    loginResult = RequestResult.Success("¡Sesión iniciada con Google!")
-                )
-            }
-            delay(300)
-            onSuccess()
         }
     }
 
@@ -131,7 +120,6 @@ class LoginViewModel : ViewModel() {
     private fun validatePassword(password: String): String? {
         return when {
             password.isBlank() -> "La contraseña es obligatoria"
-            password.length < 3 -> "La contraseña debe tener al menos 3 caracteres"
             else -> null
         }
     }

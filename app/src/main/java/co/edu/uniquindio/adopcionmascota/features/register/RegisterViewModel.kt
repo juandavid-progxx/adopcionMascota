@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import co.edu.uniquindio.adopcionmascota.core.data.AuthRepository
 
 data class RegisterUiState(
     val fullName: String = "",
@@ -177,18 +178,30 @@ class RegisterViewModel : ViewModel() {
                     registrationResult = RequestResult.Loading
                 )
             }
-
-            delay(1200) // Simulación de registro en red / BD
-
-            _uiState.update {
-                it.copy(
-                    isRegistering = false,
-                    registrationResult = RequestResult.Success("¡Cuenta creada con éxito!")
+            try {
+                AuthRepository.register(
+                    name = state.fullName,
+                    email = state.email,
+                    password = state.password,
+                    phone = state.phone,
+                    city = state.city
                 )
+                _uiState.update {
+                    it.copy(
+                        isRegistering = false,
+                        registrationResult = RequestResult.Success("¡Cuenta creada con éxito!")
+                    )
+                }
+                delay(500)
+                onSuccess()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isRegistering = false,
+                        registrationResult = RequestResult.Failure(AuthRepository.friendlyError(e))
+                    )
+                }
             }
-
-            delay(500)
-            onSuccess()
         }
     }
 

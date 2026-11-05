@@ -53,7 +53,8 @@ import co.edu.uniquindio.adopcionmascota.core.util.RequestResult
 @Composable
 fun RegisterScreen(
     viewModel: RegisterViewModel = viewModel(),
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    onRegistered: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -268,7 +269,7 @@ fun RegisterScreen(
             contentAlignment = Alignment.Center
         ) {
             Button(
-                onClick = { viewModel.register(onSuccess = onBack) },
+                onClick = { viewModel.register(onSuccess = onRegistered) },
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .height(50.dp),

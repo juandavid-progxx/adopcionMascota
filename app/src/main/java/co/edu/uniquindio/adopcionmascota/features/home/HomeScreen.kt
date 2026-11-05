@@ -301,7 +301,7 @@ fun HomeScreen(
                             }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Gestión y revisión de contenido institucional.",
+                                text = "Gestión y revisión de seguridad",
                                 fontSize = 11.sp,
                                 color = Color(0xFF607D8B)
                             )
@@ -322,23 +322,6 @@ fun HomeScreen(
             HorizontalDivider(color = Color(0xFFE0E0E0), thickness = 1.dp)
             Spacer(modifier = Modifier.height(4.dp))
 
-            Button(
-                onClick = onLoginClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF00796B)
-                ),
-                shape = CircleShape
-            ) {
-                Text(
-                    text = "Iniciar sesión",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
-                )
-            }
 
             OutlinedButton(
                 onClick = onRegisterClick,

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import co.edu.uniquindio.adopcionmascota.core.data.AuthRepository
 
 data class PasswordRecoveryUiState(
     val email: String = "",
@@ -47,7 +48,6 @@ class PasswordRecoveryViewModel : ViewModel() {
             }
             return
         }
-
         viewModelScope.launch {
             _uiState.update {
                 it.copy(
@@ -55,18 +55,25 @@ class PasswordRecoveryViewModel : ViewModel() {
                     recoveryResult = RequestResult.Loading
                 )
             }
-
-            delay(1000) // Simulación de envío del enlace por correo
-
-            _uiState.update {
-                it.copy(
-                    isSending = false,
-                    recoveryResult = RequestResult.Success("¡Enlace enviado!")
-                )
+            try {
+                AuthRepository.sendPasswordReset(state.email)
+                _uiState.update {
+                    it.copy(
+                        isSending = false,
+                        recoveryResult = RequestResult.Success("¡Enlace enviado!")
+                    )
+                }
+                onSuccess()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isSending = false,
+                        recoveryResult = RequestResult.Failure(AuthRepository.friendlyError(e))
+                    )
+                }
             }
-
-            onSuccess()
         }
+
     }
 
     fun resetForm() {

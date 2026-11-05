@@ -49,7 +49,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.core.util.RequestResult
-
+import androidx.compose.ui.platform.LocalContext
+import co.edu.uniquindio.adopcionmascota.core.data.GoogleSignInHelper
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
@@ -59,6 +60,7 @@ fun LoginScreen(
     onGoogleLoginClick: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -240,7 +242,12 @@ fun LoginScreen(
 
             // 9. Botón de inicio de sesión con Google
             OutlinedButton(
-                onClick = { viewModel.loginWithGoogle(onGoogleLoginClick) },
+                onClick = {
+                    viewModel.loginWithGoogle(
+                        getToken = { GoogleSignInHelper.getIdToken(context) },
+                        onSuccess = onGoogleLoginClick
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),

@@ -18,12 +18,49 @@ import co.edu.uniquindio.adopcionmascota.features.profile.ProfileScreen
 import co.edu.uniquindio.adopcionmascota.features.notifications.RequesterProfileScreen
 import co.edu.uniquindio.adopcionmascota.features.myposts.MyPostsScreen
 import co.edu.uniquindio.adopcionmascota.features.achievements.AchievementsScreen
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import co.edu.uniquindio.adopcionmascota.core.data.AuthRepository
+import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    var startDestination by remember { mutableStateOf<MainRoutes?>(null) }
+
+    LaunchedEffect(Unit) {
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+        if (firebaseUser == null) {
+            startDestination = MainRoutes.Home
+        } else {
+            startDestination = try {
+                AuthRepository.loadProfile(firebaseUser.uid)
+                if (SessionManager.isModerator) MainRoutes.Moderation else MainRoutes.Feed()
+            } catch (e: Exception) {
+                FirebaseAuth.getInstance().signOut()
+                MainRoutes.Home
+            }
+        }
+    }
+
+    val start = startDestination
+    if (start == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
     NavHost(
         navController = navController,
-        startDestination = MainRoutes.Home
+        startDestination = start
     ) {
         composable<MainRoutes.Home> {
             HomeScreen(
@@ -44,12 +81,15 @@ fun AppNavigation() {
                 },
                 onForgotPasswordClick = { navController.navigate(MainRoutes.PasswordRecovery) },
                 onRegisterClick = { navController.navigate(MainRoutes.Register) },
-                onGoogleLoginClick = { navController.navigate(MainRoutes.Feed) }
+                onGoogleLoginClick = { navController.navigate(MainRoutes.Feed()) }
             )
         }
         composable<MainRoutes.Register> {
             RegisterScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onRegistered = {
+                    navController.navigate(MainRoutes.Feed()) { popUpTo(MainRoutes.Home)}
+                }
             )
         }
         composable<MainRoutes.Moderation> {
