@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "268815004885",
+    "project_id": "adopcion-mascotas-3c003",
+    "storage_bucket": "adopcion-mascotas-3c003.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:268815004885:android:e91fd0011f6d60c8b79e5c",
+        "android_client_info": {
+          "package_name": "co.edu.uniquindio.adopcionmascota"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "268815004885-6f1v85vqkk6ceu8sjfnrfta3f61e002e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "co.edu.uniquindio.adopcionmascota",
+            "certificate_hash": "64380d05459687d260557682ff69fa4070866d6a"
+          }
+        },
+        {
+          "client_id": "268815004885-21ppfldribvsophtfa7nd2irj52jol9n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2P5jXprCxmA5MGtNYs80NGVtnJUK4C-o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "268815004885-21ppfldribvsophtfa7nd2irj52jol9n.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
