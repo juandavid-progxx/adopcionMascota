@@ -54,7 +54,9 @@ object AuthRepository {
                     name = doc.getString("name") ?: fbUser?.displayName ?: "Usuario",
                     email = doc.getString("email") ?: fbUser?.email.orEmpty(),
                     isModerator = doc.getString("role") == "moderator",
-                    phone = doc.getString("phone").orEmpty()
+                    phone = doc.getString("phone").orEmpty(),
+                    badges = (doc.get("badges") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                    level = doc.getString("level")
                 )
             )
         } else {

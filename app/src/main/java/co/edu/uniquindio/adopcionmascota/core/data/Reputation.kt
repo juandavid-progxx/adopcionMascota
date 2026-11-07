@@ -2,7 +2,8 @@ package co.edu.uniquindio.adopcionmascota.core.data
 
 import co.edu.uniquindio.adopcionmascota.features.feed.Pet
 import co.edu.uniquindio.adopcionmascota.features.feed.PostStatus
-
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
 data class UserStats(
     val posts: Int = 0,
     val verified: Int = 0,
@@ -51,8 +52,9 @@ enum class Badge(
 
 object ReputationManager {
 
-    private val unlockedBadges = mutableMapOf<String, MutableSet<Badge>>()
-    private val lastLevel = mutableMapOf<String, UserLevel>()
+    private var loadedFor: String? = null
+    private var knownBadges = mutableSetOf<String>()
+    private var knownLevel: UserLevel? = null
 
     fun statsFor(userId: String, pets: List<Pet>): UserStats {
         val mine = pets.filter { it.authorId == userId }
@@ -65,42 +67,53 @@ object ReputationManager {
         )
     }
 
-    // Se llama cada vez que cambian las publicaciones: detecta niveles e insignias nuevas
-    fun checkAll() {
-        val pets = PetRepository.pets.value
-        val ids = (pets.map { it.authorId } + pets.flatMap { p -> p.comments.map { it.authorId } })
-            .filter { it.isNotBlank() && it != "demo" }
-            .toSet()
-        ids.forEach { check(it, pets) }
+    fun reset() {
+        loadedFor = null
+        knownBadges = mutableSetOf()
+        knownLevel = null
     }
 
-    private fun check(userId: String, pets: List<Pet>) {
-        val stats = statsFor(userId, pets)
-        val level = UserLevel.forPoints(stats.points)
+    // Evalúa solo al usuario actual y guarda en su perfil lo que ya se le notificó
+    fun checkCurrentUser() {
+        val me = SessionManager.currentUser ?: return
+        if (me.isModerator) return
 
-        val previous = lastLevel[userId]
-        if (previous != null && level.ordinal > previous.ordinal) {
-            NotificationRepository.add(
-                userId = userId,
-                title = "¡Subiste de nivel!",
-                message = "Ahora eres ${level.displayName} ${level.emoji}. ¡Sigue ayudando a las mascotas!",
-                petId = null,
-                isAchievement = true
-            )
+        if (loadedFor != me.id) {
+            loadedFor = me.id
+            knownBadges = me.badges.toMutableSet()
+            knownLevel = UserLevel.values().find { it.name == me.level }
         }
-        lastLevel[userId] = level
 
-        val unlocked = unlockedBadges.getOrPut(userId) { mutableSetOf() }
-        Badge.values().forEach { badge ->
-            if (badge !in unlocked && badge.isUnlocked(stats, level)) {
-                unlocked.add(badge)
+        val stats = statsFor(me.id, PetRepository.pets.value)
+        val level = UserLevel.forPoints(stats.points)
+        val userRef = FirebaseFirestore.getInstance().collection("users").document(me.id)
+
+        val previous = knownLevel
+        if (previous == null || level.ordinal > previous.ordinal) {
+            if (previous != null) {
                 NotificationRepository.add(
-                    userId = userId,
+                    userId = me.id,
+                    title = "¡Subiste de nivel!",
+                    message = "Ahora eres ${level.displayName} ${level.emoji}. ¡Sigue ayudando a las mascotas!",
+                    petId = null,
+                    isAchievement = true
+                )
+            }
+            knownLevel = level
+            userRef.update("level", level.name)
+        }
+
+        Badge.values().forEach { badge ->
+            if (badge.name !in knownBadges && badge.isUnlocked(stats, level)) {
+                knownBadges.add(badge.name)
+                NotificationRepository.add(
+                    userId = me.id,
                     title = "¡Nuevo logro desbloqueado!",
                     message = "Obtuviste la insignia \"${badge.title}\" ${badge.emoji}. ¡Sigue así!",
                     petId = null,
                     isAchievement = true
                 )
+                userRef.update("badges", FieldValue.arrayUnion(badge.name))
             }
         }
     }
