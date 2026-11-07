@@ -231,6 +231,21 @@ fun ProfileScreen(
             }
         )
     }
+    // Diálogo: no se pudo eliminar
+    state.deleteMessage?.let { msg ->
+        AlertDialog(
+            onDismissRequest = { viewModel.onDismissDeleteMessage() },
+            title = { Text("No se pudo eliminar la cuenta") },
+            text = { Text(msg) },
+            confirmButton = {
+                if (state.needsRelogin) {
+                    Button(onClick = { viewModel.onLogout(onLoggedOut) }) { Text("Cerrar sesión") }
+                } else {
+                    Button(onClick = { viewModel.onDismissDeleteMessage() }) { Text("Entendido") }
+                }
+            }
+        )
+    }
 }
 
 @Composable

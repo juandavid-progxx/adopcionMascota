@@ -11,6 +11,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.NoCredentialException
 import com.google.firebase.auth.GoogleAuthProvider
+
+
+class ReauthRequiredException : Exception("Se requiere iniciar sesión de nuevo")
 object AuthRepository {
 
     private val auth get() = FirebaseAuth.getInstance()
@@ -71,6 +74,21 @@ object AuthRepository {
     suspend fun sendPasswordReset(email: String) {
         auth.useAppLanguage() // el correo llega en el idioma del celular
         auth.sendPasswordResetEmail(email.trim()).await()
+    }
+    suspend fun deleteAccount() {
+        val user = auth.currentUser ?: throw IllegalStateException("No hay sesión activa")
+        val uid = user.uid
+
+        // Firebase exige un inicio de sesión reciente para eliminar la cuenta
+        val tokenResult = user.getIdToken(true).await()
+        val ageMs = System.currentTimeMillis() - tokenResult.authTimestamp * 1000
+        if (ageMs > 4 * 60 * 1000) throw ReauthRequiredException()
+
+        PetRepository.deleteByAuthor(uid)
+        NotificationRepository.deleteForUser(uid)
+        db.collection("users").document(uid).delete().await()
+        user.delete().await()
+        SessionManager.logout()
     }
 
     fun friendlyError(e: Throwable): String = when (e) {

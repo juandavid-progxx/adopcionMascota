@@ -14,7 +14,7 @@ import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-
+import co.edu.uniquindio.adopcionmascota.core.util.await
 object PetRepository {
 
     private val db get() = FirebaseFirestore.getInstance()
@@ -125,13 +125,11 @@ object PetRepository {
         db.collection("pets").document(id).delete()
     }
 
-    fun deleteByAuthor(authorId: String) {
-        db.collection("pets").whereEqualTo("authorId", authorId).get()
-            .addOnSuccessListener { snap ->
-                val batch = db.batch()
-                snap.documents.forEach { batch.delete(it.reference) }
-                batch.commit()
-            }
+    suspend fun deleteByAuthor(authorId: String) {
+        val snap = db.collection("pets").whereEqualTo("authorId", authorId).get().await()
+        val batch = db.batch()
+        snap.documents.forEach { batch.delete(it.reference) }
+        batch.commit().await()
     }
 
     // ---------- Documento de Firestore -> Pet ----------

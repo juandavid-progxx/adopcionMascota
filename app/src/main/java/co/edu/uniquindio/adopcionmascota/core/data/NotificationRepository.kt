@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
+import co.edu.uniquindio.adopcionmascota.core.util.await
 
 data class AppNotification(
     val id: String,
@@ -107,12 +108,10 @@ object NotificationRepository {
         _all.value.filter { !it.isRead }.forEach { markRead(it.id) }
     }
 
-    fun deleteForUser(userId: String) {
-        db.collection("notifications").whereEqualTo("userId", userId).get()
-            .addOnSuccessListener { snap ->
-                val batch = db.batch()
-                snap.documents.forEach { batch.delete(it.reference) }
-                batch.commit()
-            }
+    suspend fun deleteForUser(userId: String) {
+        val snap = db.collection("notifications").whereEqualTo("userId", userId).get().await()
+        val batch = db.batch()
+        snap.documents.forEach { batch.delete(it.reference) }
+        batch.commit().await()
     }
 }
