@@ -66,7 +66,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
-
+import androidx.compose.ui.layout.ContentScale
+import co.edu.uniquindio.adopcionmascota.core.data.cloudThumb
+import coil3.compose.AsyncImage
 @Composable
 fun FeedScreen(
     viewModel: FeedScreenViewModel = viewModel(),
@@ -538,6 +540,14 @@ private fun PetCardItem(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color.DarkGray
+                    )
+                }
+                if (pet.imageUrls.isNotEmpty()) {
+                    AsyncImage(
+                        model = pet.imageUrls.first().cloudThumb(),
+                        contentDescription = pet.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
 

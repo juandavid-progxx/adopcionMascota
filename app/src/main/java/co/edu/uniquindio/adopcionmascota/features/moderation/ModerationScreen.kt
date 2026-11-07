@@ -16,7 +16,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.features.feed.Pet
 import co.edu.uniquindio.adopcionmascota.features.feed.PostStatus
-
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import co.edu.uniquindio.adopcionmascota.core.data.cloudThumb
+import coil3.compose.AsyncImage
+import androidx.compose.foundation.shape.RoundedCornerShape
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModerationScreen(
@@ -112,6 +117,18 @@ private fun ModerationCard(
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            if (pet.imageUrls.isNotEmpty()) {
+                AsyncImage(
+                    model = pet.imageUrls.first().cloudThumb(),
+                    contentDescription = pet.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                )
+                Spacer(Modifier.height(10.dp))
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "${pet.type.emoji} ${pet.name}",

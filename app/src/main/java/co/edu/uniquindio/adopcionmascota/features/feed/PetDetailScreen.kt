@@ -53,7 +53,11 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
-
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.ui.layout.ContentScale
+import co.edu.uniquindio.adopcionmascota.core.data.cloudThumb
+import coil3.compose.AsyncImage
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun PetDetailScreen(
@@ -172,6 +176,31 @@ fun PetDetailScreen(
                         fontWeight = FontWeight.Medium,
                         color = Color.DarkGray
                     )
+                }
+                if (pet.imageUrls.isNotEmpty()) {
+                    val pagerState = rememberPagerState(pageCount = { pet.imageUrls.size })
+                    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                        AsyncImage(
+                            model = pet.imageUrls[page].cloudThumb(1000),
+                            contentDescription = pet.name,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    if (pet.imageUrls.size > 1) {
+                        Surface(
+                            modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color.Black.copy(alpha = 0.55f)
+                        ) {
+                            Text(
+                                text = "${pagerState.currentPage + 1} / ${pet.imageUrls.size}",
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
                 }
 
                 // Badge de genero
