@@ -17,6 +17,8 @@ import co.edu.uniquindio.adopcionmascota.features.feed.PetType
 import co.edu.uniquindio.adopcionmascota.features.feed.PostStatus
 import co.edu.uniquindio.adopcionmascota.features.feed.PetCategory
 import co.edu.uniquindio.adopcionmascota.features.feed.fields
+import android.content.Context
+import co.edu.uniquindio.adopcionmascota.core.data.CloudinaryUploader
 enum class AnimalType(val displayName: String, val emoji: String) {
     DOG("Perro", "🐕"),
     CAT("Gato", "🐈"),
@@ -38,7 +40,7 @@ data class PostLocation(
 )
 
 data class CreatePostUiState(
-    val photos: List<String> = listOf("foto_luna_1.jpg", "foto_luna_2.jpg"),
+    val photos: List<String> = emptyList(),
     val selectedAnimal: AnimalType? = AnimalType.DOG,
     val selectedPetCategory: PetCategory = PetCategory.ADOPTION,
     val title: String = "",
@@ -77,6 +79,8 @@ data class CreatePostUiState(
                 descriptionError == null &&
                 locationError == null &&
                 photosError == null
+
+
 }
 
 class CreatePostsViewModel : ViewModel() {
@@ -103,6 +107,11 @@ class CreatePostsViewModel : ViewModel() {
                 photos = newPhotos,
                 photosError = if (newPhotos.isEmpty()) "Debes incluir al menos una fotografía" else null
             )
+        }
+    }
+    fun onPhotosPicked(uris: List<String>) {
+        _uiState.update { s ->
+            s.copy(photos = (s.photos + uris).distinct().take(5), photosError = null)
         }
     }
     fun onPetCategorySelected(category: PetCategory) {
@@ -191,12 +200,12 @@ class CreatePostsViewModel : ViewModel() {
         }
     }
 
-    fun publishPost(onSuccess: () -> Unit) {
+    fun publishPost(appContext: Context, onSuccess: () -> Unit = {}) {
         val currentState = _uiState.value
-
-        // Validación exhaustiva antes de publicar
-        val titleErr = if (currentState.title.isBlank()) "El título es obligatorio" else null
         val fields = currentState.selectedPetCategory.fields()
+
+        // Validación antes de publicar
+        val titleErr = if (currentState.title.isBlank()) "El título es obligatorio" else null
         val breedErr = if (fields.breed && currentState.breed.isBlank()) "La raza es obligatoria" else null
         val categoryErr = if (fields.animal && currentState.selectedAnimal == null) "Selecciona el tipo de animal" else null
         val sizeErr = if (fields.size && currentState.selectedSize == null) "Selecciona un tamaño" else null
@@ -222,16 +231,25 @@ class CreatePostsViewModel : ViewModel() {
             return
         }
 
-        // Inicia el proceso simulado de envío
         viewModelScope.launch {
-            _uiState.update { state ->
-                state.copy(
-                    isPublishing = true,
-                    publishResult = RequestResult.Loading
-                )
+            _uiState.update { it.copy(isPublishing = true, publishResult = RequestResult.Loading) }
+
+            // 1) Subir las fotos a Cloudinary: devuelve una URL por foto
+            val urls = try {
+                currentState.photos.map { CloudinaryUploader.upload(appContext, it) }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isPublishing = false,
+                        publishResult = RequestResult.Failure(
+                            "No se pudieron subir las fotos. Revisa tu conexión e inténtalo de nuevo."
+                        )
+                    )
+                }
+                return@launch
             }
 
-            delay(1200) // Simula la llamada a red / BD
+            // 2) Guardar la publicación en Firestore (queda pendiente de verificación)
             val user = SessionManager.currentUser
             PetRepository.add(
                 Pet(
@@ -256,17 +274,19 @@ class CreatePostsViewModel : ViewModel() {
                     shelterContact = user?.email ?: "",
                     authorId = user?.id ?: "demo",
                     category = currentState.selectedPetCategory,
+                    imageUrls = urls,
+                    latitude = currentState.selectedLocation?.latitude,
+                    longitude = currentState.selectedLocation?.longitude,
                     status = PostStatus.PENDING
                 )
             )
 
-            _uiState.update { state ->
-                state.copy(
+            _uiState.update {
+                it.copy(
                     isPublishing = false,
                     publishResult = RequestResult.Success("¡Publicación creada exitosamente!")
                 )
             }
-
             delay(500)
             onSuccess()
         }

@@ -1,10 +1,13 @@
 package co.edu.uniquindio.adopcionmascota.core.data
 
+import android.util.Log
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import java.util.UUID
+import co.edu.uniquindio.adopcionmascota.core.util.await
 
 data class AppNotification(
     val id: String,
@@ -23,9 +26,48 @@ data class AppNotification(
 
 object NotificationRepository {
 
+    private val db get() = FirebaseFirestore.getInstance()
+
+    // Solo las notificaciones del usuario que tiene la sesión abierta
     private val _all = MutableStateFlow<List<AppNotification>>(emptyList())
     val all: StateFlow<List<AppNotification>> = _all.asStateFlow()
 
+    private var listener: ListenerRegistration? = null
+
+    fun start() {
+        stop()
+        val me = SessionManager.currentUser?.id ?: return
+        listener = db.collection("notifications").whereEqualTo("userId", me)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) {
+                    Log.e("NotificationRepo", "Error escuchando notificaciones", error)
+                    return@addSnapshotListener
+                }
+                _all.value = snapshot.documents.map { d ->
+                    AppNotification(
+                        id = d.id,
+                        userId = d.getString("userId") ?: "",
+                        title = d.getString("title") ?: "",
+                        message = d.getString("message") ?: "",
+                        petId = d.getString("petId"),
+                        isRead = d.getBoolean("isRead") ?: false,
+                        timestamp = d.getLong("timestamp") ?: 0L,
+                        contactName = d.getString("contactName"),
+                        contactEmail = d.getString("contactEmail"),
+                        contactPhone = d.getString("contactPhone"),
+                        isAchievement = d.getBoolean("isAchievement") ?: false
+                    )
+                }.sortedByDescending { it.timestamp }
+            }
+    }
+
+    fun stop() {
+        listener?.remove()
+        listener = null
+        _all.value = emptyList()
+    }
+
+    // Crea una notificación para cualquier usuario (el destinatario la recibe en tiempo real)
     fun add(
         userId: String,
         title: String,
@@ -36,33 +78,40 @@ object NotificationRepository {
         contactPhone: String? = null,
         isAchievement: Boolean = false
     ) {
-        val notification = AppNotification(
-            id = UUID.randomUUID().toString(),
-            userId = userId,
-            title = title,
-            message = message,
-            petId = petId,
-            contactName = contactName,
-            contactEmail = contactEmail,
-            contactPhone = contactPhone,
-            isAchievement = isAchievement
+        val id = UUID.randomUUID().toString()
+        db.collection("notifications").document(id).set(
+            mapOf<String, Any?>(
+                "userId" to userId,
+                "title" to title,
+                "message" to message,
+                "petId" to petId,
+                "isRead" to false,
+                "timestamp" to System.currentTimeMillis(),
+                "contactName" to contactName,
+                "contactEmail" to contactEmail,
+                "contactPhone" to contactPhone,
+                "isAchievement" to isAchievement
+            )
         )
-        _all.update { listOf(notification) + it }
     }
 
     fun markRead(id: String) {
-        _all.update { list -> list.map { if (it.id == id) it.copy(isRead = true) else it } }
+        db.collection("notifications").document(id).update("isRead", true)
     }
 
     fun toggleRead(id: String) {
-        _all.update { list -> list.map { if (it.id == id) it.copy(isRead = !it.isRead) else it } }
+        val n = _all.value.find { it.id == id } ?: return
+        db.collection("notifications").document(id).update("isRead", !n.isRead)
     }
 
     fun markAllRead(userId: String) {
-        _all.update { list -> list.map { if (it.userId == userId) it.copy(isRead = true) else it } }
+        _all.value.filter { !it.isRead }.forEach { markRead(it.id) }
     }
 
-    fun deleteForUser(userId: String) {
-        _all.update { list -> list.filter { it.userId != userId } }
+    suspend fun deleteForUser(userId: String) {
+        val snap = db.collection("notifications").whereEqualTo("userId", userId).get().await()
+        val batch = db.batch()
+        snap.documents.forEach { batch.delete(it.reference) }
+        batch.commit().await()
     }
 }

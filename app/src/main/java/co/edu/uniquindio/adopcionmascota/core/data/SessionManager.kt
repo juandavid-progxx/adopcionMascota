@@ -8,7 +8,9 @@ data class User(
     val name: String,
     val email: String,
     val isModerator: Boolean = false,
-    val phone: String = ""
+    val phone: String = "",
+    val badges: List<String> = emptyList(), // insignias ya notificadas
+    val level: String? = null               // nivel ya notificado
 )
 
 object SessionManager {
@@ -21,6 +23,8 @@ object SessionManager {
 
     fun setUser(user: User) {
         currentUser = user
+        PetRepository.start()
+        NotificationRepository.start()
     }
 
     fun updateProfile(name: String, phone: String) {
@@ -31,6 +35,9 @@ object SessionManager {
     }
 
     fun logout() {
+        PetRepository.stop()
+        NotificationRepository.stop()
+        ReputationManager.reset()
         FirebaseAuth.getInstance().signOut()
         currentUser = null
     }

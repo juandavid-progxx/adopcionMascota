@@ -14,7 +14,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import co.edu.uniquindio.adopcionmascota.core.data.ReputationManager
 import co.edu.uniquindio.adopcionmascota.core.data.UserLevel
-
+import co.edu.uniquindio.adopcionmascota.core.data.AuthRepository
+import co.edu.uniquindio.adopcionmascota.core.data.ReauthRequiredException
 
 data class ProfileUiState(
     val user: User? = null,
@@ -27,7 +28,9 @@ data class ProfileUiState(
     val nameError: String? = null,
     val showDeleteDialog: Boolean = false,
     val points: Int = 0,
-    val level: UserLevel = UserLevel.FRIEND
+    val level: UserLevel = UserLevel.FRIEND,
+    val deleteMessage: String? = null,
+    val needsRelogin: Boolean = false
 )
 
 class ProfileViewModel : ViewModel() {
@@ -101,13 +104,28 @@ class ProfileViewModel : ViewModel() {
     }
 
     fun onConfirmDelete(onDone: () -> Unit) {
-        val id = SessionManager.currentUser?.id
-        if (id != null) {
-            PetRepository.deleteByAuthor(id)
-            NotificationRepository.deleteForUser(id)
+        viewModelScope.launch {
+            _uiState.update { it.copy(showDeleteDialog = false) }
+            try {
+                AuthRepository.deleteAccount()
+                onDone()
+            } catch (e: ReauthRequiredException) {
+                _uiState.update {
+                    it.copy(
+                        deleteMessage = "Por seguridad, debes iniciar sesión de nuevo antes de eliminar tu cuenta. Cierra sesión, vuelve a entrar y repite este paso.",
+                        needsRelogin = true
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(deleteMessage = AuthRepository.friendlyError(e), needsRelogin = false)
+                }
+            }
         }
-        SessionManager.logout()
-        onDone()
+    }
+
+    fun onDismissDeleteMessage() {
+        _uiState.update { it.copy(deleteMessage = null) }
     }
 
     // ---------- Cerrar sesión ----------

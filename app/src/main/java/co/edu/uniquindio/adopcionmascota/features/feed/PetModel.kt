@@ -89,7 +89,11 @@ data class Pet(
     val importantVotes: Int = 0,
     val votedByMe: Boolean = false,
     val comments: List<Comment> = emptyList(),
-    val category: PetCategory = PetCategory.ADOPTION
+    val category: PetCategory = PetCategory.ADOPTION,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val imageUrls: List<String> = emptyList(),
+    val createdAt: Long = 0L
 )
 
 val samplePets = listOf(

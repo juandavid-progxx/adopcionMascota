@@ -81,6 +81,12 @@ import co.edu.uniquindio.adopcionmascota.features.feed.fields
 import co.edu.uniquindio.adopcionmascota.features.feed.locationLabel
 import co.edu.uniquindio.adopcionmascota.features.feed.publishLabel
 import co.edu.uniquindio.adopcionmascota.features.feed.titleExample
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil3.compose.AsyncImage
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreatePostsScreen(
@@ -89,6 +95,10 @@ fun CreatePostsScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val fields = state.selectedPetCategory.fields()
+    val context = LocalContext.current
+    val photoPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(5)
+    ) { uris -> viewModel.onPhotosPicked(uris.map { it.toString() }) }
 
     Scaffold(
         topBar = {
@@ -112,7 +122,7 @@ fun CreatePostsScreen(
                 },
                 actions = {
                     TextButton(
-                        onClick = { viewModel.publishPost(onSuccess = onBack) },
+                        onClick = { viewModel.publishPost(context.applicationContext, onSuccess = onBack) },
                         enabled = !state.isPublishing
                     ) {
                         if (state.isPublishing) {
@@ -150,7 +160,11 @@ fun CreatePostsScreen(
             SectionHeader(title = "Fotos *")
             PhotoSelectionSection(
                 photos = state.photos,
-                onAddPhoto = { viewModel.onAddPhoto() },
+                onAddPhoto = {
+                    photoPicker.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                },
                 onRemovePhoto = { viewModel.onRemovePhoto(it) }
             )
             state.photosError?.let { ErrorText(text = it) }
@@ -246,7 +260,7 @@ fun CreatePostsScreen(
 
             // Botón principal al final del formulario
             Button(
-                onClick = { viewModel.publishPost(onSuccess = onBack) },
+                onClick = { viewModel.publishPost(context.applicationContext, onSuccess = onBack) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -382,8 +396,8 @@ private fun ErrorText(text: String) {
 private fun PhotoSelectionSection(
     photos: List<String>,
     onAddPhoto: () -> Unit,
-    onRemovePhoto: (String) -> Unit
-) {
+    onRemovePhoto: (String) -> Unit)
+{
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxWidth()
@@ -435,19 +449,12 @@ private fun PhotoSelectionSection(
                     .clip(RoundedCornerShape(12.dp))
                     .background(Color(0xFFB2DFDB))
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(text = "🐕", fontSize = 36.sp)
-                    Text(
-                        text = photo,
-                        fontSize = 10.sp,
-                        color = Color.DarkGray,
-                        maxLines = 1
-                    )
-                }
+                AsyncImage(
+                    model = photo,
+                    contentDescription = "Foto de la mascota",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
 
                 // Botón eliminar foto
                 Box(
