@@ -68,7 +68,8 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
     // Mapbox
-    implementation("com.mapbox.maps:android-ndk27:11.34.2")
-    implementation("com.mapbox.extension:maps-compose-ndk27:11.34.2")
+    // Mapbox
+    implementation("com.mapbox.maps:android-ndk27:11.29.1")
+    implementation("com.mapbox.extension:maps-compose-ndk27:11.29.1")
 
 }
