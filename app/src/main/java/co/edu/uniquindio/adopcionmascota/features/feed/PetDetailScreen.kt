@@ -58,6 +58,14 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.ui.layout.ContentScale
 import co.edu.uniquindio.adopcionmascota.core.data.cloudThumb
 import coil3.compose.AsyncImage
+import com.mapbox.geojson.Point
+import com.mapbox.maps.ViewAnnotationAnchor
+import com.mapbox.maps.extension.compose.MapboxMap
+import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
+import com.mapbox.maps.extension.compose.annotation.ViewAnnotation
+import com.mapbox.maps.viewannotation.annotationAnchor
+import com.mapbox.maps.viewannotation.geometry
+import com.mapbox.maps.viewannotation.viewAnnotationOptions
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun PetDetailScreen(
@@ -377,6 +385,21 @@ fun PetDetailScreen(
                         }
                     }
                 }
+                val lat = pet.latitude
+                val lng = pet.longitude
+                if (lat != null && lng != null) {
+                    Text(
+                        text = "Ubicación",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1B5E20)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "📍 ${pet.city}", fontSize = 14.sp, color = Color.DarkGray)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    PetLocationMap(lat = lat, lng = lng)
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
                 Spacer(modifier = Modifier.height(20.dp))
                 CommentsSection(pet = pet, onVote = onVote, onComment = onComment)
 
@@ -491,6 +514,39 @@ private fun CommentsSection(
                 enabled = text.isNotBlank()
             ) {
                 Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar comentario")
+            }
+        }
+    }
+}
+
+@Composable
+private fun PetLocationMap(lat: Double, lng: Double) {
+    val point = Point.fromLngLat(lng, lat)
+    val viewport = rememberMapViewportState {
+        setCameraOptions {
+            center(point)
+            zoom(15.0)
+            pitch(0.0)
+            bearing(0.0)
+        }
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(220.dp)
+            .clip(RoundedCornerShape(16.dp))
+    ) {
+        MapboxMap(
+            modifier = Modifier.fillMaxSize(),
+            mapViewportState = viewport
+        ) {
+            ViewAnnotation(
+                options = viewAnnotationOptions {
+                    geometry(point)
+                    annotationAnchor { anchor(ViewAnnotationAnchor.BOTTOM) }
+                }
+            ) {
+                Text("📍", fontSize = 36.sp)
             }
         }
     }

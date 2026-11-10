@@ -69,6 +69,15 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.ui.layout.ContentScale
 import co.edu.uniquindio.adopcionmascota.core.data.cloudThumb
 import coil3.compose.AsyncImage
+import androidx.compose.runtime.key
+import com.mapbox.geojson.Point
+import com.mapbox.maps.ViewAnnotationAnchor
+import com.mapbox.maps.extension.compose.MapboxMap
+import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
+import com.mapbox.maps.extension.compose.annotation.ViewAnnotation
+import com.mapbox.maps.viewannotation.annotationAnchor
+import com.mapbox.maps.viewannotation.geometry
+import com.mapbox.maps.viewannotation.viewAnnotationOptions
 @Composable
 fun FeedScreen(
     viewModel: FeedScreenViewModel = viewModel(),
@@ -690,74 +699,63 @@ private fun MapViewSimulated(
     pets: List<Pet>,
     onPetClick: (Pet) -> Unit
 ) {
+    val located = pets.filter { it.latitude != null && it.longitude != null }
+    val viewport = rememberMapViewportState {
+        setCameraOptions {
+            center(Point.fromLngLat(-75.6811, 4.5339))
+            zoom(11.5)
+            pitch(0.0)
+            bearing(0.0)
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFFE0F2F1)),
-        contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        MapboxMap(
+            modifier = Modifier.fillMaxSize(),
+            mapViewportState = viewport
         ) {
-            Icon(
-                imageVector = Icons.Default.Map,
-                contentDescription = null,
-                tint = Color(0xFF004D40),
-                modifier = Modifier.size(64.dp)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "Mapa de Mascotas Cercanas",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = Color(0xFF004D40)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Mostrando ${pets.size} puntos de adopción en la zona seleccionada",
-                fontSize = 13.sp,
-                color = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
-            ) {
-                items(pets) { pet ->
-                    Surface(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { onPetClick(pet) },
-                        color = Color.White,
-                        shadowElevation = 4.dp
+            located.forEach { pet ->
+                key(pet.id) {
+                    ViewAnnotation(
+                        options = viewAnnotationOptions {
+                            geometry(Point.fromLngLat(pet.longitude!!, pet.latitude!!))
+                            annotationAnchor { anchor(ViewAnnotationAnchor.BOTTOM) }
+                        }
                     ) {
-                        Row(
-                            modifier = Modifier.padding(10.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            shape = CircleShape,
+                            color = Color.White,
+                            shadowElevation = 4.dp,
+                            modifier = Modifier.clickable { onPetClick(pet) }
                         ) {
-                            Text(text = pet.type.emoji, fontSize = 20.sp)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Column {
-                                Text(
-                                    text = pet.name,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
-                                )
-                                Text(
-                                    text = pet.city,
-                                    fontSize = 11.sp,
-                                    color = Color.Gray
-                                )
-                            }
+                            Text(
+                                text = pet.category.emoji,
+                                fontSize = 22.sp,
+                                modifier = Modifier.padding(8.dp)
+                            )
                         }
                     }
                 }
             }
+        }
+
+        Surface(
+            modifier = Modifier.align(Alignment.TopCenter).padding(10.dp),
+            shape = RoundedCornerShape(12.dp),
+            color = Color.White.copy(alpha = 0.92f),
+            shadowElevation = 4.dp
+        ) {
+            Text(
+                text = "${located.size} publicaciones en el mapa",
+                fontSize = 13.sp,
+                color = Color(0xFF004D40),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+            )
         }
     }
 }
