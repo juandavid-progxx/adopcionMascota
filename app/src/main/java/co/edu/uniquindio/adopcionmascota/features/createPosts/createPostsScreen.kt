@@ -1,6 +1,7 @@
 package co.edu.uniquindio.adopcionmascota.features.createPosts
 
 import androidx.compose.foundation.background
+import co.edu.uniquindio.adopcionmascota.core.ui.LocationPickerScreen
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -99,6 +100,20 @@ fun CreatePostsScreen(
     val photoPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(5)
     ) { uris -> viewModel.onPhotosPicked(uris.map { it.toString() }) }
+
+    // Si está abierto el selector, se muestra el mapa a pantalla completa
+    if (state.showMapSelector) {
+        LocationPickerScreen(
+            title = state.selectedPetCategory.locationLabel(),
+            initialLat = state.selectedLocation?.latitude,
+            initialLng = state.selectedLocation?.longitude,
+            onConfirm = { address, lat, lng ->
+                viewModel.onSelectMapLocation(PostLocation(address, lat, lng))
+            },
+            onBack = { viewModel.onCloseMapSelector() }
+        )
+        return
+    }
 
     Scaffold(
         topBar = {

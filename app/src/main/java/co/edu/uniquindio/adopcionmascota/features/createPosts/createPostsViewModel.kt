@@ -49,7 +49,7 @@ data class CreatePostUiState(
     val selectedSize: PetSize? = PetSize.LARGE,
     val isVaccinated: Boolean = true,
     val description: String = "",
-    val selectedLocation: PostLocation? = PostLocation("Chapinero, Bogotá", 4.658420, -74.065680),
+    val selectedLocation: PostLocation? = null,
     val showMapSelector: Boolean = false,
     val isPublishing: Boolean = false,
     val titleError: String? = null,
