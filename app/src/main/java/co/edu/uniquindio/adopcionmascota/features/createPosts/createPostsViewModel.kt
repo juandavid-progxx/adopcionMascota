@@ -19,6 +19,9 @@ import co.edu.uniquindio.adopcionmascota.features.feed.PetCategory
 import co.edu.uniquindio.adopcionmascota.features.feed.fields
 import android.content.Context
 import co.edu.uniquindio.adopcionmascota.core.data.CloudinaryUploader
+import co.edu.uniquindio.adopcionmascota.core.data.AiClassifier
+import co.edu.uniquindio.adopcionmascota.core.data.AiSuggestion
+import kotlinx.coroutines.Job
 enum class AnimalType(val displayName: String, val emoji: String) {
     DOG("Perro", "🐕"),
     CAT("Gato", "🐈"),
@@ -59,6 +62,8 @@ data class CreatePostUiState(
     val descriptionError: String? = null,
     val locationError: String? = null,
     val photosError: String? = null,
+    val aiLoading: Boolean = false,
+    val aiSuggestion: AiSuggestion? = null,
     val publishResult: RequestResult? = null
 
 ) {
@@ -136,6 +141,7 @@ class CreatePostsViewModel : ViewModel() {
                 titleError = if (newTitle.isBlank()) "El título es obligatorio" else null
             )
         }
+        scheduleSuggestion()
     }
 
     fun onBreedChange(newBreed: String) {
@@ -176,6 +182,7 @@ class CreatePostsViewModel : ViewModel() {
                 descriptionError = if (newDescription.isBlank()) "La descripción es obligatoria" else null
             )
         }
+        scheduleSuggestion()
     }
 
     fun onOpenMapSelector() {
@@ -296,5 +303,34 @@ class CreatePostsViewModel : ViewModel() {
         _uiState.update { state ->
             state.copy(publishResult = null)
         }
+    }
+    private var suggestJob: Job? = null
+    private var lastAnalyzed = ""
+
+    // Espera a que el usuario deje de escribir y pide la sugerencia de categoría
+    private fun scheduleSuggestion() {
+        suggestJob?.cancel()
+        _uiState.update { it.copy(aiLoading = false) }
+
+        val s = _uiState.value
+        val text = "${s.title}\n${s.description}".trim()
+        if (s.title.isBlank() || s.description.trim().length < 15 || text == lastAnalyzed) return
+
+        suggestJob = viewModelScope.launch {
+            delay(1500)
+            _uiState.update { it.copy(aiLoading = true) }
+            val result = AiClassifier.classify(s.title, s.description)
+            lastAnalyzed = text
+            _uiState.update { it.copy(aiLoading = false, aiSuggestion = result) }
+        }
+    }
+
+    fun onApplySuggestion() {
+        val suggestion = _uiState.value.aiSuggestion ?: return
+        _uiState.update { it.copy(selectedPetCategory = suggestion.category, aiSuggestion = null) }
+    }
+
+    fun onDismissSuggestion() {
+        _uiState.update { it.copy(aiSuggestion = null) }
     }
 }

@@ -89,6 +89,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil3.compose.AsyncImage
 import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
+import co.edu.uniquindio.adopcionmascota.core.data.AiSuggestion
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreatePostsScreen(
@@ -263,6 +264,13 @@ fun CreatePostsScreen(
                 isError = state.descriptionError != null,
                 errorMessage = state.descriptionError
             )
+            AiSuggestionCard(
+                loading = state.aiLoading,
+                suggestion = state.aiSuggestion,
+                current = state.selectedPetCategory,
+                onApply = { viewModel.onApplySuggestion() },
+                onDismiss = { viewModel.onDismissSuggestion() }
+            )
 
             // 10. Selección de ubicación en el mapa
             SectionHeader(title = state.selectedPetCategory.locationLabel())
@@ -406,6 +414,63 @@ private fun ErrorText(text: String) {
         fontSize = 12.sp,
         modifier = Modifier.padding(start = 4.dp, top = 2.dp)
     )
+}
+@Composable
+private fun AiSuggestionCard(
+    loading: Boolean,
+    suggestion: AiSuggestion?,
+    current: PetCategory,
+    onApply: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    if (!loading && suggestion == null) return
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFE8EAF6))
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            if (loading) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text("Analizando tu publicación con IA...", fontSize = 14.sp)
+                }
+            } else if (suggestion != null) {
+                if (suggestion.category == current) {
+                    Text(
+                        text = "✨ La IA coincide con tu categoría: ${suggestion.category.emoji} ${suggestion.category.displayName}",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF1A237E)
+                    )
+                } else {
+                    Text(
+                        text = "✨ La IA sugiere: ${suggestion.category.emoji} ${suggestion.category.displayName}",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1A237E)
+                    )
+                    Text(suggestion.reason, fontSize = 13.sp, color = Color.DarkGray)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = onApply,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3949AB))
+                        ) { Text("Aplicar", color = Color.White) }
+                        TextButton(onClick = onDismiss) { Text("Mantener la mía") }
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Fuente: ${suggestion.source}",
+                    fontSize = 11.sp,
+                    color = Color.Gray
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -945,5 +1010,6 @@ private fun BreedDropdown(
                 modifier = Modifier.padding(start = 16.dp, top = 4.dp)
             )
         }
+
     }
 }
