@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.edu.uniquindio.adopcionmascota.core.ui.LocationPickerScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +35,16 @@ fun ProfileScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val user = state.user
+    if (state.showLocationPicker) {
+        LocationPickerScreen(
+            title = "Mi ubicación",
+            initialLat = user?.lat,
+            initialLng = user?.lng,
+            onConfirm = { address, lat, lng -> viewModel.onLocationSelected(address, lat, lng) },
+            onBack = { viewModel.onDismissLocation() }
+        )
+        return
+    }
 
     Scaffold(
         topBar = {
@@ -133,6 +144,29 @@ fun ProfileScreen(
                             fontSize = 13.sp,
                             color = Color.Gray
                         )
+                    }
+                }
+            }
+            val savedAddress = user?.address.orEmpty()
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("📍 Mi ubicación", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = if (savedAddress.isBlank()) "Aún no has definido tu ubicación" else savedAddress,
+                        fontSize = 14.sp,
+                        color = Color.DarkGray
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedButton(
+                        onClick = { viewModel.onLocationClick() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (savedAddress.isBlank()) "Elegir en el mapa" else "Cambiar ubicación")
                     }
                 }
             }

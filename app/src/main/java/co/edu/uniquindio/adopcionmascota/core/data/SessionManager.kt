@@ -9,8 +9,11 @@ data class User(
     val email: String,
     val isModerator: Boolean = false,
     val phone: String = "",
-    val badges: List<String> = emptyList(), // insignias ya notificadas
-    val level: String? = null               // nivel ya notificado
+    val badges: List<String> = emptyList(),
+    val level: String? = null,
+    val lat: Double? = null,
+    val lng: Double? = null,
+    val address: String = ""
 )
 
 object SessionManager {
@@ -32,6 +35,13 @@ object SessionManager {
         currentUser = user.copy(name = name, phone = phone)
         FirebaseFirestore.getInstance().collection("users").document(user.id)
             .update(mapOf("name" to name, "phone" to phone))
+    }
+
+    fun updateLocation(address: String, lat: Double, lng: Double) {
+        val user = currentUser ?: return
+        currentUser = user.copy(address = address, lat = lat, lng = lng)
+        FirebaseFirestore.getInstance().collection("users").document(user.id)
+            .update(mapOf("address" to address, "lat" to lat, "lng" to lng))
     }
 
     fun logout() {

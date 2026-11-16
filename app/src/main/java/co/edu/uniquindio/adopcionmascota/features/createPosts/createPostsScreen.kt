@@ -88,6 +88,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil3.compose.AsyncImage
+import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreatePostsScreen(
@@ -105,8 +106,8 @@ fun CreatePostsScreen(
     if (state.showMapSelector) {
         LocationPickerScreen(
             title = state.selectedPetCategory.locationLabel(),
-            initialLat = state.selectedLocation?.latitude,
-            initialLng = state.selectedLocation?.longitude,
+            initialLat = state.selectedLocation?.latitude ?: SessionManager.currentUser?.lat,
+            initialLng = state.selectedLocation?.longitude ?: SessionManager.currentUser?.lng,
             onConfirm = { address, lat, lng ->
                 viewModel.onSelectMapLocation(PostLocation(address, lat, lng))
             },

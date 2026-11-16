@@ -30,7 +30,8 @@ data class ProfileUiState(
     val points: Int = 0,
     val level: UserLevel = UserLevel.FRIEND,
     val deleteMessage: String? = null,
-    val needsRelogin: Boolean = false
+    val needsRelogin: Boolean = false,
+    val showLocationPicker: Boolean = false
 )
 
 class ProfileViewModel : ViewModel() {
@@ -132,5 +133,20 @@ class ProfileViewModel : ViewModel() {
     fun onLogout(onDone: () -> Unit) {
         SessionManager.logout()
         onDone()
+    }
+    // ---------- Ubicación ----------
+    fun onLocationClick() {
+        _uiState.update { it.copy(showLocationPicker = true) }
+    }
+
+    fun onDismissLocation() {
+        _uiState.update { it.copy(showLocationPicker = false) }
+    }
+
+    fun onLocationSelected(address: String, lat: Double, lng: Double) {
+        SessionManager.updateLocation(address, lat, lng)
+        _uiState.update {
+            it.copy(user = SessionManager.currentUser, showLocationPicker = false)
+        }
     }
 }

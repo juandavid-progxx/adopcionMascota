@@ -91,6 +91,7 @@ fun FeedScreen(
     LaunchedEffect(initialPetId) {
         initialPetId?.let { viewModel.openPetById(it) }
     }
+    LaunchedEffect(Unit) { viewModel.refreshFilters() }
 
     // Si hay una mascota seleccionada, mostramos la pantalla de Detalle
     val selectedPet = state.selectedPetForDetail
@@ -169,6 +170,16 @@ fun FeedScreen(
                 selectedLocation = state.selectedLocation,
                 onLocationSelected = { viewModel.onLocationSelected(it) }
             )
+            if (state.selectedLocation != LocationFilter.ALL_COUNTRY &&
+                SessionManager.currentUser?.lat == null
+            ) {
+                Text(
+                    text = "📍 Define tu ubicación en Perfil → Mi ubicación para filtrar por cercanía",
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -702,7 +713,8 @@ private fun MapViewSimulated(
     val located = pets.filter { it.latitude != null && it.longitude != null }
     val viewport = rememberMapViewportState {
         setCameraOptions {
-            center(Point.fromLngLat(-75.6811, 4.5339))
+            val me = SessionManager.currentUser
+            center(Point.fromLngLat(me?.lng ?: -75.6811, me?.lat ?: 4.5339))
             zoom(11.5)
             pitch(0.0)
             bearing(0.0)
