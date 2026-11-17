@@ -17,6 +17,8 @@ data class RegisterUiState(
     val email: String = "",
     val phone: String = "",
     val city: String = "",
+    val department: String = "",
+    val municipality: String = "",
     val password: String = "",
     val confirmPassword: String = "",
     val termsAccepted: Boolean = false,
@@ -77,6 +79,18 @@ class RegisterViewModel : ViewModel() {
                 email = newEmail,
                 emailError = validateEmail(newEmail)
             )
+        }
+    }
+    // Seleccionar departamento y municipio
+    fun onDepartmentSelected(department: String) {
+        _uiState.update {
+            it.copy(department = department, municipality = "", city = "", cityError = null)
+        }
+    }
+
+    fun onMunicipalitySelected(municipality: String) {
+        _uiState.update {
+            it.copy(municipality = municipality, city = "$municipality, ${it.department}", cityError = null)
         }
     }
 
@@ -231,7 +245,7 @@ class RegisterViewModel : ViewModel() {
 
     private fun validateCity(city: String): String? {
         return when {
-            city.isBlank() -> "La ciudad es obligatoria"
+            city.isBlank() -> "Selecciona tu departamento y municipio"
             else -> null
         }
     }

@@ -15,3 +15,9 @@ fun distanceKm(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
             cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * sin(dLng / 2).pow(2)
     return 2 * earthRadiusKm * asin(sqrt(a))
 }
+// "Calle 5 # 3-20, Armenia, Quindío, Colombia" -> "Armenia, Quindío"
+fun cityFromAddress(address: String): String {
+    val parts = address.split(",").map { it.trim() }
+        .filter { it.isNotEmpty() && !it.equals("Colombia", ignoreCase = true) }
+    return if (parts.size >= 3) parts.takeLast(2).joinToString(", ") else address
+}

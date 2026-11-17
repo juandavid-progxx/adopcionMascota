@@ -72,7 +72,12 @@ object PetRepository {
             "createdAt" to System.currentTimeMillis(),
             "votedBy" to emptyList<String>(),
             "favoritedBy" to emptyList<String>(),
-            "comments" to emptyList<Map<String, String>>()
+            "comments" to emptyList<Map<String, String>>(),
+            "address" to pet.address,
+            "authorPhone" to pet.authorPhone,
+            "vetKind" to pet.vetKind,
+            "schedule" to pet.schedule,
+            "phones" to pet.phones,
         )
         db.collection("pets").document(pet.id).set(data)
     }
@@ -173,7 +178,12 @@ object PetRepository {
                 latitude = doc.getDouble("latitude"),
                 longitude = doc.getDouble("longitude"),
                 imageUrls = (doc.get("imageUrls") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
-                createdAt = doc.getLong("createdAt") ?: 0L
+                createdAt = doc.getLong("createdAt") ?: 0L,
+                address = doc.getString("address").orEmpty(),
+                authorPhone = doc.getString("authorPhone").orEmpty(),
+                vetKind = doc.getString("vetKind").orEmpty(),
+                schedule = (doc.get("schedule") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                phones = (doc.get("phones") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
             )
         } catch (e: Exception) {
             Log.e("PetRepository", "No se pudo leer la publicación ${doc.id}", e)

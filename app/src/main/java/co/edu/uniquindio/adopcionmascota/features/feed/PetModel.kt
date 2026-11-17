@@ -66,6 +66,10 @@ enum class PetCategory(
         "¿Te interesa \"{name}\"? Avisaremos al organizador."
     )
 }
+enum class VetKind(val displayName: String, val emoji: String) {
+    VACCINATION_DAY("Jornada de vacunación", "💉"),
+    SERVICE_PROVIDER("Prestador de servicios veterinarios", "🏥")
+}
 
 data class Pet(
     val id: String,
@@ -93,7 +97,12 @@ data class Pet(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val imageUrls: List<String> = emptyList(),
-    val createdAt: Long = 0L
+    val createdAt: Long = 0L,
+    val address: String = "",
+    val authorPhone: String = "",
+    val vetKind: String = "",
+    val schedule: List<String> = emptyList(),
+    val phones: List<String> = emptyList()
 )
 
 val samplePets = listOf(
