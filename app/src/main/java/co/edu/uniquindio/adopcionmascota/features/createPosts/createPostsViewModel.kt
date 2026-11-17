@@ -22,6 +22,8 @@ import co.edu.uniquindio.adopcionmascota.core.data.CloudinaryUploader
 import co.edu.uniquindio.adopcionmascota.core.data.AiClassifier
 import co.edu.uniquindio.adopcionmascota.core.data.AiSuggestion
 import kotlinx.coroutines.Job
+import co.edu.uniquindio.adopcionmascota.core.util.cityFromAddress
+import co.edu.uniquindio.adopcionmascota.features.feed.VetKind
 enum class AnimalType(val displayName: String, val emoji: String) {
     DOG("Perro", "🐕"),
     CAT("Gato", "🐈"),
@@ -40,6 +42,11 @@ data class PostLocation(
     val address: String,
     val latitude: Double,
     val longitude: Double
+)
+data class ScheduleBlock(
+    val days: Set<Int> = emptySet(),
+    val open: String = "08:00",
+    val close: String = "18:00"
 )
 
 data class CreatePostUiState(
@@ -64,7 +71,11 @@ data class CreatePostUiState(
     val photosError: String? = null,
     val aiLoading: Boolean = false,
     val aiSuggestion: AiSuggestion? = null,
-    val publishResult: RequestResult? = null
+    val publishResult: RequestResult? = null,
+    val vetKind: VetKind = VetKind.VACCINATION_DAY,
+    val scheduleBlocks: List<ScheduleBlock> = listOf(ScheduleBlock()),
+    val phones: List<String> = listOf(""),
+    val providerError: String? = null,
 
 ) {
     val maxDescriptionLength: Int = 500
@@ -174,6 +185,63 @@ class CreatePostsViewModel : ViewModel() {
         }
     }
 
+    fun onVetKindSelected(kind: VetKind) {
+        _uiState.update { it.copy(vetKind = kind, providerError = null) }
+    }
+
+    fun onToggleDay(block: Int, day: Int) {
+        _uiState.update { s ->
+            s.copy(
+                scheduleBlocks = s.scheduleBlocks.mapIndexed { i, b ->
+                    if (i != block) b
+                    else b.copy(days = if (day in b.days) b.days - day else b.days + day)
+                },
+                providerError = null
+            )
+        }
+    }
+
+    fun onTimeChange(block: Int, isOpen: Boolean, value: String) {
+        _uiState.update { s ->
+            s.copy(scheduleBlocks = s.scheduleBlocks.mapIndexed { i, b ->
+                if (i != block) b else if (isOpen) b.copy(open = value) else b.copy(close = value)
+            })
+        }
+    }
+
+    fun onAddBlock() {
+        _uiState.update { s ->
+            if (s.scheduleBlocks.size >= 4) s else s.copy(scheduleBlocks = s.scheduleBlocks + ScheduleBlock())
+        }
+    }
+
+    fun onRemoveBlock(index: Int) {
+        _uiState.update { s ->
+            if (s.scheduleBlocks.size <= 1) s
+            else s.copy(scheduleBlocks = s.scheduleBlocks.filterIndexed { i, _ -> i != index })
+        }
+    }
+
+    fun onPhoneChange(index: Int, value: String) {
+        _uiState.update { s ->
+            s.copy(phones = s.phones.mapIndexed { i, p -> if (i == index) value else p }, providerError = null)
+        }
+    }
+
+    fun onAddPhone() {
+        _uiState.update { s -> if (s.phones.size >= 3) s else s.copy(phones = s.phones + "") }
+    }
+
+    fun onRemovePhone(index: Int) {
+        _uiState.update { s ->
+            if (s.phones.size <= 1) s else s.copy(phones = s.phones.filterIndexed { i, _ -> i != index })
+        }
+    }
+
+    private fun formatBlock(b: ScheduleBlock): String {
+        val names = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
+        return "${b.days.sorted().joinToString(", ") { names[it] }} · ${b.open}–${b.close}"
+    }
     fun onDescriptionChange(newDescription: String) {
         _uiState.update { state ->
             if (newDescription.length > state.maxDescriptionLength) return@update state
@@ -210,8 +278,9 @@ class CreatePostsViewModel : ViewModel() {
     fun publishPost(appContext: Context, onSuccess: () -> Unit = {}) {
         val currentState = _uiState.value
         val fields = currentState.selectedPetCategory.fields()
+        val isProvider = currentState.selectedPetCategory == PetCategory.VETERINARY &&
+                currentState.vetKind == VetKind.SERVICE_PROVIDER
 
-        // Validación antes de publicar
         val titleErr = if (currentState.title.isBlank()) "El título es obligatorio" else null
         val breedErr = if (fields.breed && currentState.breed.isBlank()) "La raza es obligatoria" else null
         val categoryErr = if (fields.animal && currentState.selectedAnimal == null) "Selecciona el tipo de animal" else null
@@ -219,9 +288,16 @@ class CreatePostsViewModel : ViewModel() {
         val descErr = if (currentState.description.isBlank()) "La descripción es obligatoria" else null
         val locErr = if (currentState.selectedLocation == null) "Selecciona una ubicación en el mapa" else null
         val photosErr = if (currentState.photos.isEmpty()) "Debes agregar al menos una foto" else null
+        val providerErr = if (isProvider) {
+            when {
+                currentState.scheduleBlocks.any { it.days.isEmpty() } -> "Selecciona al menos un día en cada horario"
+                currentState.phones.none { p -> p.count { it.isDigit() } >= 7 } -> "Agrega al menos un teléfono válido"
+                else -> null
+            }
+        } else null
 
         if (titleErr != null || breedErr != null || categoryErr != null || sizeErr != null ||
-            descErr != null || locErr != null || photosErr != null
+            descErr != null || locErr != null || photosErr != null || providerErr != null
         ) {
             _uiState.update { state ->
                 state.copy(
@@ -232,6 +308,7 @@ class CreatePostsViewModel : ViewModel() {
                     descriptionError = descErr,
                     locationError = locErr,
                     photosError = photosErr,
+                    providerError = providerErr,
                     publishResult = RequestResult.Failure("Por favor completa los campos obligatorios (*)")
                 )
             }
@@ -241,10 +318,10 @@ class CreatePostsViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.update { it.copy(isPublishing = true, publishResult = RequestResult.Loading) }
 
-            // 1) Subir las fotos a Cloudinary: devuelve una URL por foto
             val urls = try {
                 currentState.photos.map { CloudinaryUploader.upload(appContext, it) }
             } catch (e: Exception) {
+                android.util.Log.e("Cloudinary", "Falló la subida", e)
                 _uiState.update {
                     it.copy(
                         isPublishing = false,
@@ -256,8 +333,8 @@ class CreatePostsViewModel : ViewModel() {
                 return@launch
             }
 
-            // 2) Guardar la publicación en Firestore (queda pendiente de verificación)
             val user = SessionManager.currentUser
+            val loc = currentState.selectedLocation
             PetRepository.add(
                 Pet(
                     id = System.currentTimeMillis().toString(),
@@ -269,21 +346,26 @@ class CreatePostsViewModel : ViewModel() {
                         AnimalType.BIRD -> PetType.BIRD
                         else -> PetType.OTHER
                     },
-                    breed = if (fields.breed) currentState.breed else "Jornada veterinaria",
+                    breed = if (fields.breed) currentState.breed else "Servicio veterinario",
                     age = if (!fields.animal) "No aplica" else currentState.age.ifBlank { "No especificada" },
                     gender = if (fields.animal) "No especificado" else "Evento",
                     size = if (!fields.animal) "No aplica" else (currentState.selectedSize?.displayName ?: ""),
-                    city = currentState.selectedLocation?.address ?: "",
+                    city = cityFromAddress(loc?.address ?: ""),
+                    address = loc?.address ?: "",
                     locationFilter = LocationFilter.IN_CITY,
                     description = currentState.description,
                     healthInfo = if (fields.vaccines && currentState.isVaccinated) listOf("Vacunas al día") else emptyList(),
                     shelterName = user?.name ?: "Usuario",
                     shelterContact = user?.email ?: "",
+                    authorPhone = user?.phone.orEmpty(),
                     authorId = user?.id ?: "demo",
                     category = currentState.selectedPetCategory,
                     imageUrls = urls,
-                    latitude = currentState.selectedLocation?.latitude,
-                    longitude = currentState.selectedLocation?.longitude,
+                    latitude = loc?.latitude,
+                    longitude = loc?.longitude,
+                    vetKind = if (currentState.selectedPetCategory == PetCategory.VETERINARY) currentState.vetKind.name else "",
+                    schedule = if (isProvider) currentState.scheduleBlocks.map { formatBlock(it) } else emptyList(),
+                    phones = if (isProvider) currentState.phones.map { it.trim() }.filter { it.isNotEmpty() } else emptyList(),
                     status = PostStatus.PENDING
                 )
             )

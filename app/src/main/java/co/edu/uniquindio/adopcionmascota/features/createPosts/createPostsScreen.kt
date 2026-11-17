@@ -90,6 +90,7 @@ import androidx.compose.ui.platform.LocalContext
 import coil3.compose.AsyncImage
 import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
 import co.edu.uniquindio.adopcionmascota.core.data.AiSuggestion
+import co.edu.uniquindio.adopcionmascota.features.feed.VetKind
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreatePostsScreen(
@@ -193,6 +194,27 @@ fun CreatePostsScreen(
                 selected = state.selectedPetCategory,
                 onSelected = { viewModel.onPetCategorySelected(it) }
             )
+            if (state.selectedPetCategory == PetCategory.VETERINARY) {
+                SectionHeader(title = "Tipo de servicio veterinario *")
+                VetKindSelector(
+                    selected = state.vetKind,
+                    onSelected = { viewModel.onVetKindSelected(it) }
+                )
+                if (state.vetKind == VetKind.SERVICE_PROVIDER) {
+                    ServiceProviderForm(
+                        blocks = state.scheduleBlocks,
+                        phones = state.phones,
+                        error = state.providerError,
+                        onToggleDay = { b, d -> viewModel.onToggleDay(b, d) },
+                        onTimeChange = { b, open, v -> viewModel.onTimeChange(b, open, v) },
+                        onAddBlock = { viewModel.onAddBlock() },
+                        onRemoveBlock = { viewModel.onRemoveBlock(it) },
+                        onPhoneChange = { i, v -> viewModel.onPhoneChange(i, v) },
+                        onAddPhone = { viewModel.onAddPhone() },
+                        onRemovePhone = { viewModel.onRemovePhone(it) }
+                    )
+                }
+            }
             // 3. Tipo de animal (no aplica en Veterinaria)
             if (fields.animal) {
                 SectionHeader(title = "Tipo de animal *")
