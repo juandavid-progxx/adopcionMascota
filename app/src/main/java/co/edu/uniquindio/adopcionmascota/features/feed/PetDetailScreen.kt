@@ -77,6 +77,9 @@ import com.mapbox.maps.viewannotation.viewAnnotationOptions
 import android.content.Intent
 import androidx.compose.ui.platform.LocalContext
 
+
+private const val APP_INVITE_LINK = "https://appdistribution.firebase.dev/i/df957c03c1c65317"
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun PetDetailScreen(
@@ -130,7 +133,8 @@ fun PetDetailScreen(
                     IconButton(
                         onClick = {
                             val texto = "${pet.category.emoji} ${pet.name} (${pet.category.displayName})\n" +
-                                    "${pet.city}\n\n${pet.description}"
+                                    "${pet.city}\n\n${pet.description}" +
+                                    "\n\n📲 Descarga AdoptaYa: $APP_INVITE_LINK"
                             val envio = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
                                 putExtra(Intent.EXTRA_SUBJECT, pet.name)
@@ -142,6 +146,7 @@ fun PetDetailScreen(
                     ) {
                         Icon(Icons.Default.Share, contentDescription = "Compartir")
                     }
+
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF0F4F2))
             )
