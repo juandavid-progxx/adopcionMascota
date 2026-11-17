@@ -34,7 +34,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import co.edu.uniquindio.adopcionmascota.core.ui.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.edu.uniquindio.adopcionmascota.core.util.Translator
 
 @Composable
 fun HomeScreen(
@@ -80,6 +81,7 @@ fun HomeScreen(
                 .padding(horizontal = 28.dp, vertical = 36.dp),
             contentAlignment = Alignment.Center
         ) {
+            // Contenido centrado (logo, nombre y mensaje)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
@@ -120,6 +122,23 @@ fun HomeScreen(
                     textAlign = TextAlign.Center,
                     lineHeight = 24.sp,
                     modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            }
+
+            // Botón de idioma con bandera (arriba a la derecha)
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .clickable { Translator.english = !Translator.english },
+                shape = RoundedCornerShape(20.dp),
+                color = Color.White.copy(alpha = 0.18f)
+            ) {
+                androidx.compose.material3.Text(
+                    text = if (Translator.english) "🇺🇸 English" else "🇨🇴 Español",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }

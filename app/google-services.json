@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "268815004885-gad3pv7qjkrdav5dqugnhgnmcfp7poim.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "co.edu.uniquindio.adopcionmascota",
+            "certificate_hash": "209924efbda4ff1f3f4c3d5b39bd2e748a19b560"
+          }
+        },
+        {
           "client_id": "268815004885-21ppfldribvsophtfa7nd2irj52jol9n.apps.googleusercontent.com",
           "client_type": 3
         }

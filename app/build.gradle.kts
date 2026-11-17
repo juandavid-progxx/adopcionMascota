@@ -19,8 +19,8 @@ android {
         applicationId = "co.edu.uniquindio.adopcionmascota"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "OPENROUTER_API_KEY", "\"${localProps.getProperty("OPENROUTER_API_KEY", "")}\"")
@@ -78,5 +78,6 @@ dependencies {
     // Mapbox
     implementation("com.mapbox.maps:android-ndk27:11.29.1")
     implementation("com.mapbox.extension:maps-compose-ndk27:11.29.1")
+    implementation("com.google.mlkit:translate:17.0.3")
 
 }

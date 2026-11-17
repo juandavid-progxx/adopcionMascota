@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import co.edu.uniquindio.adopcionmascota.core.ui.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -19,9 +20,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.TourStep
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberTour
+import co.edu.uniquindio.adopcionmascota.core.ui.tourTarget
 import co.edu.uniquindio.adopcionmascota.features.feed.Pet
 import co.edu.uniquindio.adopcionmascota.features.feed.PostStatus
 import co.edu.uniquindio.adopcionmascota.features.feed.resolveLabel
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,6 +36,15 @@ fun MyPostsScreen(
     onBack: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val startTour = rememberTour(
+        "my_posts",
+        listOf(
+            TourStep("Mis publicaciones", "Aquí ves todo lo que has publicado."),
+            TourStep("Estado", "Cada tarjeta muestra su estado: pendiente, verificada, rechazada o resuelta.", target = "my_card"),
+            TourStep("Acciones", "Edita, elimina o marca como resuelta cuando la mascota ya tenga hogar o aparezca.", target = "my_actions"),
+            TourStep("Si la rechazan", "Lee el motivo, edítala y envíala de nuevo a revisión.")
+        )
+    )
 
     Scaffold(
         topBar = {
@@ -39,6 +54,9 @@ fun MyPostsScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
+                },
+                actions = {
+                    GuideHelpButton { startTour() }
                 }
             )
         }
@@ -64,8 +82,11 @@ fun MyPostsScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(state.posts, key = { it.id }) { pet ->
+                    val first = pet.id == state.posts.first().id
                     MyPostCard(
                         pet = pet,
+                        modifier = if (first) Modifier.tourTarget("my_card") else Modifier,
+                        actionsModifier = if (first) Modifier.tourTarget("my_actions") else Modifier,
                         onEdit = { viewModel.onEditClick(pet) },
                         onDelete = { viewModel.onDeleteClick(pet) },
                         onResolve = { viewModel.onResolveClick(pet) },
@@ -156,6 +177,8 @@ fun MyPostsScreen(
 @Composable
 private fun MyPostCard(
     pet: Pet,
+    modifier: Modifier = Modifier,
+    actionsModifier: Modifier = Modifier,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onResolve: () -> Unit,
@@ -169,7 +192,7 @@ private fun MyPostCard(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -227,7 +250,7 @@ private fun MyPostCard(
             }
 
             Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(modifier = actionsModifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = onEdit, modifier = Modifier.weight(1f)) {
                     Text("Editar", fontSize = 13.sp)
                 }

@@ -46,7 +46,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import co.edu.uniquindio.adopcionmascota.core.ui.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -79,6 +79,12 @@ import com.mapbox.maps.viewannotation.annotationAnchor
 import com.mapbox.maps.viewannotation.geometry
 import com.mapbox.maps.viewannotation.viewAnnotationOptions
 import androidx.compose.foundation.layout.heightIn
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
+import co.edu.uniquindio.adopcionmascota.core.ui.TourStep
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberTour
+import co.edu.uniquindio.adopcionmascota.core.ui.tourTarget
 @Composable
 fun FeedScreen(
     viewModel: FeedScreenViewModel = viewModel(),
@@ -89,6 +95,45 @@ fun FeedScreen(
     onBackFromDetail: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val startTour = rememberTour(
+        "feed",
+        listOf(
+            TourStep(
+                title = "¡Bienvenido a AdoptaYa!",
+                text = "Te mostramos rápido cómo moverte por la app. Usa las flechas para avanzar o volver."
+            ),
+            TourStep(
+                title = "Busca mascotas",
+                text = "Escribe aquí para encontrar la mascota que buscas.",
+                target = "feed_search"
+            ),
+            TourStep(
+                title = "Filtra por categoría",
+                text = "Adopción, perdidos, encontrados, hogar de paso o veterinaria. Desliza para ver todas.",
+                target = "feed_categories"
+            ),
+            TourStep(
+                title = "Cerca de ti",
+                text = "Mira solo lo que está cerca, en tu ciudad o en todo el país. Define tu ubicación en el Perfil.",
+                target = "feed_location"
+            ),
+            TourStep(
+                title = "Lista o mapa",
+                text = "Cambia entre ver las publicaciones en una lista o sobre un mapa.",
+                target = "feed_viewmode"
+            ),
+            TourStep(
+                title = "Crea una publicación",
+                text = "Toca el botón + para publicar una mascota en adopción, perdida o encontrada, un hogar de paso o un servicio veterinario.",
+                target = "feed_fab"
+            ),
+            TourStep(
+                title = "Menú inferior",
+                text = "Desde aquí vas a Inicio, Mapa, Alertas (tus notificaciones) y Perfil.",
+                target = "feed_bottom"
+            )
+        )
+    )
     LaunchedEffect(initialPetId) {
         initialPetId?.let { viewModel.openPetById(it) }
     }
@@ -136,9 +181,7 @@ fun FeedScreen(
                 containerColor = Color(0xFF00BFA5),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .size(56.dp)
-                    .shadow(6.dp, RoundedCornerShape(16.dp))
+                modifier = Modifier.size(56.dp).shadow(6.dp, RoundedCornerShape(16.dp)).tourTarget("feed_fab")
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
@@ -157,7 +200,8 @@ fun FeedScreen(
             // 1. Barra superior de búsqueda
             SearchBarHeader(
                 searchQuery = state.searchQuery,
-                onSearchChange = { viewModel.onSearchQueryChange(it) }
+                onSearchChange = { viewModel.onSearchQueryChange(it) },
+                onHelpClick = { startTour()}
             )
 
             // 2. Filtros por tipo de mascota
@@ -300,7 +344,8 @@ fun FeedScreen(
 @Composable
 private fun SearchBarHeader(
     searchQuery: String,
-    onSearchChange: (String) -> Unit
+    onSearchChange: (String) -> Unit,
+    onHelpClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -311,9 +356,7 @@ private fun SearchBarHeader(
         OutlinedTextField(
             value = searchQuery,
             onValueChange = onSearchChange,
-            modifier = Modifier
-                .weight(1f)
-                .height(52.dp),
+            modifier = Modifier.weight(1f).height(52.dp).tourTarget("feed_search"),
             placeholder = {
                 Text(
                     text = "Buscar mascotas en adopción...",
@@ -367,6 +410,7 @@ private fun SearchBarHeader(
                 modifier = Modifier.size(24.dp)
             )
         }
+        GuideHelpButton(tint = Color(0xFF004D40), onClick = onHelpClick)   // <- nuevo
     }
 }
 
@@ -420,9 +464,7 @@ private fun LocationFilterRow(
     onLocationSelected: (LocationFilter) -> Unit
 ) {
     LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).tourTarget("feed_location"),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
     ) {
@@ -476,9 +518,7 @@ private fun ViewModeSegmentedControl(
         contentAlignment = Alignment.Center
     ) {
         Surface(
-            modifier = Modifier
-                .width(220.dp)
-                .height(42.dp),
+            modifier = Modifier.width(220.dp).height(42.dp).tourTarget("feed_viewmode"),
             shape = CircleShape,
             color = Color(0xFFE8F0EC)
         ) {
@@ -760,6 +800,7 @@ private fun BottomNavigationBar(
     onItemSelected: (BottomNavItem) -> Unit
 ) {
     Surface(
+        modifier = Modifier.tourTarget("feed_bottom"),
         shadowElevation = 10.dp,
         color = Color.White,
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
@@ -830,9 +871,7 @@ private fun CategoryFilterRow(
     val options: List<PetCategory?> = listOf(null) + PetCategory.values().toList()
 
     LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).tourTarget("feed_categories"),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
     ) {

@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import co.edu.uniquindio.adopcionmascota.core.ui.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -22,6 +23,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.core.ui.LocationPickerScreen
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil3.compose.AsyncImage
+import co.edu.uniquindio.adopcionmascota.core.data.cloudThumb
+import androidx.compose.foundation.clickable
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.TourStep
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberTour
+import co.edu.uniquindio.adopcionmascota.core.ui.tourTarget
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +47,10 @@ fun ProfileScreen(
 
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val photoPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri -> if (uri != null) viewModel.onPhotoPicked(context.applicationContext, uri.toString()) }
     val user = state.user
     if (state.showLocationPicker) {
         LocationPickerScreen(
@@ -45,6 +62,18 @@ fun ProfileScreen(
         )
         return
     }
+    val startTour = rememberTour(
+        "profile",
+        listOf(
+            TourStep("Tu perfil", "Aquí gestionas tus datos, tu ubicación y tu reputación."),
+            TourStep("Tu foto", "Tócala para cambiarla.", target = "profile_photo"),
+            TourStep("Puntos y nivel", "Sumas puntos al participar y subes de nivel.", target = "profile_points"),
+            TourStep("Mi ubicación", "Defínela para ver mascotas cercanas en el feed.", target = "profile_location"),
+            TourStep("Logros", "Mira tus insignias y cómo ganar más puntos.", target = "profile_achievements"),
+            TourStep("Mis publicaciones", "Edita o elimina las tuyas.", target = "profile_myposts"),
+            TourStep("Editar mis datos", "Cambia tu nombre y teléfono.", target = "profile_edit")
+        )
+    )
 
     Scaffold(
         topBar = {
@@ -54,6 +83,9 @@ fun ProfileScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
+                },
+                actions = {
+                    GuideHelpButton { startTour() }
                 }
             )
         }
@@ -79,18 +111,38 @@ fun ProfileScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(72.dp)
+                            .size(84.dp).tourTarget("profile_photo")
                             .clip(CircleShape)
-                            .background(Color(0xFF80CBC4)),
+                            .background(Color(0xFF80CBC4))
+                            .clickable {
+                                photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = (user?.name?.firstOrNull() ?: 'U').uppercase(),
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF004D40)
-                        )
+                        if (!user?.photo.isNullOrBlank()) {
+                            AsyncImage(
+                                model = user?.photo?.cloudThumb(300),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Text(
+                                text = (user?.name?.firstOrNull() ?: 'U').uppercase(),
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF004D40)
+                            )
+                        }
+                        if (state.photoUploading) CircularProgressIndicator(modifier = Modifier.size(28.dp))
                     }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = if (state.photoUploading) "Subiendo foto..." else "Cambiar foto",
+                        fontSize = 12.sp,
+                        color = Color(0xFF00897B)
+                    )
+                    state.photoError?.let { Text(it, fontSize = 12.sp, color = Color(0xFFB71C1C)) }
                     Spacer(Modifier.height(10.dp))
                     Text(user?.name ?: "Usuario", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     Text(user?.email ?: "", fontSize = 14.sp, color = Color.Gray)
@@ -110,7 +162,7 @@ fun ProfileScreen(
                 }
             }
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().tourTarget("profile_points"),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
@@ -149,7 +201,7 @@ fun ProfileScreen(
             }
             val savedAddress = user?.address.orEmpty()
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().tourTarget("profile_location"),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
@@ -187,7 +239,7 @@ fun ProfileScreen(
             // Acciones
             Button(
                 onClick = onAchievementsClick,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().tourTarget("profile_myposts"),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9A825))
             ) { Text("🏆 Logros y reputación", color = Color.Black) }
             Button(
@@ -197,7 +249,7 @@ fun ProfileScreen(
             ) { Text("Mis publicaciones") }
             Button(
                 onClick = { viewModel.onEditClick() },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().tourTarget("profile_edit"),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00BFA5))
             ) { Text("Editar mis datos") }
 

@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import co.edu.uniquindio.adopcionmascota.core.data.AuthRepository
+import android.content.Context
+import co.edu.uniquindio.adopcionmascota.core.data.CloudinaryUploader
 
 data class RegisterUiState(
     val fullName: String = "",
@@ -143,20 +145,15 @@ class RegisterViewModel : ViewModel() {
         }
     }
 
-    fun onSelectProfilePhoto() {
-        _uiState.update { state ->
-            val hasPhoto = state.profilePhoto != null
-            state.copy(
-                profilePhoto = if (hasPhoto) null else "foto_perfil.jpg"
-            )
-        }
+    fun onProfilePhotoPicked(uri: String) {
+        _uiState.update { it.copy(profilePhoto = uri) }
     }
 
     fun resetForm() {
         _uiState.value = RegisterUiState()
     }
 
-    fun register(onSuccess: () -> Unit = {}) {
+    fun register(appContext: Context, onSuccess: () -> Unit = {}) {
         val state = _uiState.value
 
         val nameErr = validateFullName(state.fullName)
@@ -192,13 +189,25 @@ class RegisterViewModel : ViewModel() {
                     registrationResult = RequestResult.Loading
                 )
             }
+            val photoUrl = try {
+                state.profilePhoto?.let { CloudinaryUploader.upload(appContext, it) }.orEmpty()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isRegistering = false,
+                        registrationResult = RequestResult.Failure("No se pudo subir la foto de perfil. Inténtalo de nuevo.")
+                    )
+                }
+                return@launch
+            }
             try {
                 AuthRepository.register(
                     name = state.fullName,
                     email = state.email,
                     password = state.password,
                     phone = state.phone,
-                    city = state.city
+                    city = state.city,
+                    photoUrl = photoUrl
                 )
                 _uiState.update {
                     it.copy(

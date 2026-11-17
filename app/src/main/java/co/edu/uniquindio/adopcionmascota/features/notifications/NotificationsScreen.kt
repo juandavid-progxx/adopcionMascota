@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MarkEmailRead
 import androidx.compose.material.icons.filled.MarkEmailUnread
 import androidx.compose.material3.*
+import co.edu.uniquindio.adopcionmascota.core.ui.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -24,6 +25,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.core.data.AppNotification
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.TourStep
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberTour
+import co.edu.uniquindio.adopcionmascota.core.ui.tourTarget
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -38,7 +43,18 @@ fun NotificationsScreen(
     onOpenAchievements: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
-
+    val startTour = rememberTour(
+        "notifications",
+        listOf(
+            TourStep(
+                "Tus notificaciones",
+                "Aquí llegan avisos de comentarios, solicitudes y cambios en tus publicaciones."
+            ),
+            TourStep("Abre una notificación", "Tócala para ver el detalle. Si alguien envió una solicitud, verás sus datos de contacto.", target = "notif_item"),
+            TourStep("Leída / no leída", "Con este botón marcas una notificación como leída o no leída.", target = "notif_toggle"),
+            TourStep("Marcar todas", "Deja todas las notificaciones como leídas.", target = "notif_markall")
+        )
+    )
     Scaffold(
         topBar = {
             TopAppBar(
@@ -49,7 +65,11 @@ fun NotificationsScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = { viewModel.onMarkAllRead() }) { Text("Marcar todas") }
+                    GuideHelpButton { startTour() }
+                    TextButton(
+                        onClick = { viewModel.onMarkAllRead() },
+                        modifier = Modifier.tourTarget("notif_markall")
+                    ) { Text("Marcar todas") }
                 }
             )
         }
@@ -65,8 +85,11 @@ fun NotificationsScreen(
                 contentPadding = PaddingValues(vertical = 12.dp)
             ) {
                 items(state.items, key = { it.id }) { n ->
+                    val first = n.id == state.items.first().id
                     NotificationItem(
                         n = n,
+                        modifier = if (n.id == state.items.first().id) Modifier.tourTarget("notif_item") else Modifier,
+                        toggleModifier = if (first) Modifier.tourTarget("notif_toggle") else Modifier,
                         onClick = {
                             viewModel.onOpen(n)
                             when {
@@ -86,13 +109,15 @@ fun NotificationsScreen(
 @Composable
 private fun NotificationItem(
     n: AppNotification,
+    modifier: Modifier = Modifier,
+    toggleModifier: Modifier = Modifier,
     onClick: () -> Unit,
     onToggleRead: () -> Unit
 ) {
     val dateText = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(n.timestamp))
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .clickable { onClick() },
@@ -117,7 +142,7 @@ private fun NotificationItem(
                 Text(n.message, fontSize = 13.sp, color = Color.DarkGray)
                 Text(dateText, fontSize = 11.sp, color = Color.Gray)
             }
-            IconButton(onClick = onToggleRead) {
+            IconButton(onClick = onToggleRead, modifier = toggleModifier) {
                 Icon(
                     imageVector = if (n.isRead) Icons.Default.MarkEmailUnread else Icons.Default.MarkEmailRead,
                     contentDescription = if (n.isRead) "Marcar como no leída" else "Marcar como leída"

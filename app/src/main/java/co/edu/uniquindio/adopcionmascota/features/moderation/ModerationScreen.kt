@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.*
+import co.edu.uniquindio.adopcionmascota.core.ui.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +23,11 @@ import androidx.compose.ui.layout.ContentScale
 import co.edu.uniquindio.adopcionmascota.core.data.cloudThumb
 import coil3.compose.AsyncImage
 import androidx.compose.foundation.shape.RoundedCornerShape
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.TourStep
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberTour
+import co.edu.uniquindio.adopcionmascota.core.ui.tourTarget
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModerationScreen(
@@ -30,13 +36,26 @@ fun ModerationScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val list = if (state.selectedTab == 0) state.pending else state.all
-
+    val startTour = rememberTour(
+        "moderation",
+        listOf(
+            TourStep(
+                "Panel de moderación",
+                "Desde aquí revisas las publicaciones de la comunidad."
+            ),
+            TourStep("Pendientes y Todas", "\"Pendientes\" espera revisión; \"Todas\" es el historial completo.", target = "mod_tabs"),
+            TourStep("Revisa la publicación", "Mira la foto, los datos y quién la publicó.", target = "mod_card"),
+            TourStep("Verificar o rechazar", "Verifica para aprobar. Para rechazar debes escribir el motivo, que le llegará al autor.", target = "mod_actions"),
+            TourStep("Cerrar sesión", "Sal del panel de moderación.", target = "mod_logout")
+        )
+    )
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Panel de moderación", fontWeight = FontWeight.Bold) },
                 actions = {
-                    IconButton(onClick = onLogout) {
+                    GuideHelpButton { startTour() }
+                    IconButton(onClick = onLogout, modifier = Modifier.tourTarget("mod_logout")) {
                         Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
                     }
                 }
@@ -44,7 +63,7 @@ fun ModerationScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            TabRow(selectedTabIndex = state.selectedTab) {
+            TabRow(selectedTabIndex = state.selectedTab, modifier = Modifier.tourTarget("mod_tabs")) {
                 Tab(
                     selected = state.selectedTab == 0,
                     onClick = { viewModel.onTabSelected(0) },
@@ -68,8 +87,11 @@ fun ModerationScreen(
                     contentPadding = PaddingValues(vertical = 12.dp)
                 ) {
                     items(list, key = { it.id }) { pet ->
+                        val first = pet.id == list.first().id
                         ModerationCard(
                             pet = pet,
+                            modifier = if (first) Modifier.tourTarget("mod_card") else Modifier,
+                            actionsModifier = if (first) Modifier.tourTarget("mod_actions") else Modifier,
                             onVerify = { viewModel.onVerify(pet) },
                             onReject = { viewModel.onRejectClick(pet) },
                             onResolve = { viewModel.onResolve(pet) }
@@ -108,12 +130,14 @@ fun ModerationScreen(
 @Composable
 private fun ModerationCard(
     pet: Pet,
+    modifier: Modifier = Modifier,
+    actionsModifier: Modifier = Modifier,
     onVerify: () -> Unit,
     onReject: () -> Unit,
     onResolve: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -150,7 +174,7 @@ private fun ModerationCard(
             }
 
             Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(modifier = actionsModifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (pet.status == PostStatus.PENDING) {
                     Button(onClick = onVerify) { Text("Verificar") }
                     OutlinedButton(onClick = onReject) { Text("Rechazar") }

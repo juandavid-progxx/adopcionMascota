@@ -1,7 +1,6 @@
 package co.edu.uniquindio.adopcionmascota.features.login
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,7 +32,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import co.edu.uniquindio.adopcionmascota.core.ui.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,7 +49,17 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.core.util.RequestResult
 import androidx.compose.ui.platform.LocalContext
+import co.edu.uniquindio.adopcionmascota.core.ui.TourStep
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberTour
 import co.edu.uniquindio.adopcionmascota.core.data.GoogleSignInHelper
+import co.edu.uniquindio.adopcionmascota.core.ui.tourTarget
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
@@ -63,6 +72,21 @@ fun LoginScreen(
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
+    val startTour = rememberTour(
+        "login",
+        if (moderatorMode) listOf(
+            TourStep("Acceso moderador", "Entra con tu cuenta de moderador."),
+            TourStep("Tus datos", "Escribe tu correo y contraseña.", target = "login_fields"),
+            TourStep("Entrar", "Te lleva al panel de moderación.", target = "login_button")
+        ) else listOf(
+            TourStep("¡Bienvenido!", "Te mostramos cómo entrar a la app."),
+            TourStep("Correo y contraseña", "Escribe tus datos de acceso.", target = "login_fields"),
+            TourStep("¿La olvidaste?", "Te enviamos un enlace para crear una nueva.", target = "login_forgot"),
+            TourStep("Iniciar sesión", "Toca aquí para entrar.", target = "login_button"),
+            TourStep("Con Google", "Entra con tu cuenta de Google.", target = "login_google"),
+            TourStep("Crear cuenta", "Si no tienes cuenta, regístrate aquí.", target = "login_register")
+        )
+    )
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -121,29 +145,31 @@ fun LoginScreen(
 
             // 5. Formulario de inicio de sesión
             // Campo 1: Correo electrónico
-            CustomLoginField(
-                label = "Correo electrónico",
-                value = state.email,
-                onValueChange = { viewModel.onEmailChange(it) },
-                placeholder = "maria.rodriguez@email.com",
-                isError = state.emailError != null,
-                errorMessage = state.emailError,
-                keyboardType = KeyboardType.Email
-            )
+            Column(modifier = Modifier.tourTarget("login_fields")) {
+                CustomLoginField(
+                    label = "Correo electrónico",
+                    value = state.email,
+                    onValueChange = { viewModel.onEmailChange(it) },
+                    placeholder = "maria.rodriguez@email.com",
+                    isError = state.emailError != null,
+                    errorMessage = state.emailError,
+                    keyboardType = KeyboardType.Email
+                )
 
-            Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-            // Campo 2: Contraseña
-            CustomLoginField(
-                label = "Contraseña",
-                value = state.password,
-                onValueChange = { viewModel.onPasswordChange(it) },
-                placeholder = "••••••••",
-                isError = state.passwordError != null,
-                errorMessage = state.passwordError,
-                isPassword = true,
-                keyboardType = KeyboardType.Password
-            )
+                // Campo 2: Contraseña
+                CustomLoginField(
+                    label = "Contraseña",
+                    value = state.password,
+                    onValueChange = { viewModel.onPasswordChange(it) },
+                    placeholder = "••••••••",
+                    isError = state.passwordError != null,
+                    errorMessage = state.passwordError,
+                    isPassword = true,
+                    keyboardType = KeyboardType.Password
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -157,7 +183,7 @@ fun LoginScreen(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF00796B),
-                    modifier = Modifier.clickable { onForgotPasswordClick() }
+                    modifier = Modifier.tourTarget("login_forgot").clickable { onForgotPasswordClick() }
                 )
             }
 
@@ -167,8 +193,7 @@ fun LoginScreen(
             Button(
                 onClick = { viewModel.login(onSuccess = onLoginSuccess) },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
+                    .fillMaxWidth().height(48.dp).tourTarget("login_button"),
                 enabled = !state.isLoggingIn,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF00796B),
@@ -253,8 +278,7 @@ fun LoginScreen(
                         )
                     },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
+                        .fillMaxWidth().height(48.dp).tourTarget("login_google"),
                     shape = CircleShape,
                     colors = ButtonDefaults.outlinedButtonColors(
                         containerColor = Color.White
@@ -297,8 +321,7 @@ fun LoginScreen(
             // 10. Enlace para registrarse
             Row(
                 modifier = Modifier
-                    .padding(bottom = 16.dp)
-                    .clickable { onRegisterClick() },
+                    .padding(bottom = 16.dp).tourTarget("login_register").clickable { onRegisterClick() },
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -370,6 +393,7 @@ private fun CustomLoginField(
     isPassword: Boolean = false,
     keyboardType: KeyboardType = KeyboardType.Text
 ) {
+    var visible by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = value,
@@ -378,7 +402,18 @@ private fun CustomLoginField(
             placeholder = { Text(text = placeholder, color = Color(0xFF90A4AE), fontSize = 13.sp) },
             isError = isError,
             singleLine = true,
-            visualTransformation = if (isPassword) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
+            visualTransformation = if (isPassword && !visible) PasswordVisualTransformation()
+            else androidx.compose.ui.text.input.VisualTransformation.None,
+            trailingIcon = if (isPassword) {
+                {
+                    IconButton(onClick = { visible = !visible }) {
+                        Icon(
+                            imageVector = if (visible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (visible) "Ocultar contraseña" else "Mostrar contraseña"
+                        )
+                    }
+                }
+            } else null,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             shape = RoundedCornerShape(6.dp),
             modifier = Modifier.fillMaxWidth(),

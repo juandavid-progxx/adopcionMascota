@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import co.edu.uniquindio.adopcionmascota.core.ui.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -24,6 +25,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.core.data.Badge
 import co.edu.uniquindio.adopcionmascota.core.data.UserLevel
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.TourStep
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberTour
+import co.edu.uniquindio.adopcionmascota.core.ui.tourTarget
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,6 +37,16 @@ fun AchievementsScreen(
     onBack: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val startTour = rememberTour(
+        "achievements",
+        listOf(
+            TourStep("Logros y reputación", "Aquí ves tu progreso dentro de la comunidad."),
+            TourStep("Niveles", "El nivel marcado con borde es el tuyo.", target = "ach_levels"),
+            TourStep("Tu progreso", "Cuántos puntos te faltan para el siguiente nivel.", target = "ach_current"),
+            TourStep("Cómo ganar puntos", "Publicar, comentar, recibir ❤️ y resolver casos suman puntos.", target = "ach_points"),
+            TourStep("Insignias", "Las bloqueadas se desbloquean al cumplir su requisito.", target = "ach_badges")
+        )
+    )
 
     Scaffold(
         topBar = {
@@ -41,6 +56,9 @@ fun AchievementsScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
+                },
+                actions = {
+                    GuideHelpButton { startTour() }
                 }
             )
         }
@@ -56,7 +74,7 @@ fun AchievementsScreen(
         ) {
             // ---- Niveles ----
             Title("Niveles de usuario")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(modifier = Modifier.tourTarget("ach_levels"), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 UserLevel.values().forEach { level ->
                     LevelCard(level, isCurrent = level == state.level, modifier = Modifier.weight(1f))
                 }
@@ -64,7 +82,7 @@ fun AchievementsScreen(
 
             // ---- Nivel actual ----
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().tourTarget("ach_current"),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFB2EBE0))
             ) {
@@ -96,7 +114,7 @@ fun AchievementsScreen(
             // ---- Cómo ganar puntos ----
             Title("Cómo ganar puntos")
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().tourTarget("ach_points"),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
@@ -115,8 +133,11 @@ fun AchievementsScreen(
 
             // ---- Insignias ----
             Title("Insignias (${state.unlocked.size}/${Badge.values().size})")
-            Badge.values().toList().chunked(3).forEach { rowBadges ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Badge.values().toList().chunked(3).forEachIndexed { i, rowBadges ->
+                Row(
+                    modifier = if (i == 0) Modifier.tourTarget("ach_badges") else Modifier,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     rowBadges.forEach { badge ->
                         BadgeCard(
                             badge = badge,
