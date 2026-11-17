@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import co.edu.uniquindio.adopcionmascota.core.util.distanceKm
 
 data class FeedUiState(
     val searchQuery: String = "",
@@ -35,8 +36,7 @@ private fun FeedUiState.withFilters(): FeedUiState {
     val result = pets.filter { pet ->
         val matchesCategory = selectedCategory == null || pet.category == selectedCategory
         val matchesType = selectedPetType == PetType.ALL || pet.type == selectedPetType
-        val matchesLocation = selectedLocation == LocationFilter.ALL_COUNTRY ||
-                pet.locationFilter == selectedLocation
+        val matchesLocation = matchesLocation(selectedLocation, pet)
         val matchesQuery = searchQuery.isBlank() ||
                 pet.name.contains(searchQuery, ignoreCase = true) ||
                 pet.breed.contains(searchQuery, ignoreCase = true) ||
@@ -46,6 +46,18 @@ private fun FeedUiState.withFilters(): FeedUiState {
         matchesCategory && matchesType && matchesLocation && matchesQuery
     }
     return copy(filteredPets = result)
+}
+// Cercanos: hasta 5 km. En la ciudad: hasta 25 km. Todo el país: sin filtro.
+private fun matchesLocation(filter: LocationFilter, pet: Pet): Boolean {
+    if (filter == LocationFilter.ALL_COUNTRY) return true
+    val me = SessionManager.currentUser
+    val myLat = me?.lat
+    val myLng = me?.lng
+    if (myLat == null || myLng == null) return true // sin ubicación del usuario no se filtra
+    val lat = pet.latitude ?: return false
+    val lng = pet.longitude ?: return false
+    val km = distanceKm(myLat, myLng, lat, lng)
+    return if (filter == LocationFilter.NEARBY) km <= 5.0 else km <= 25.0
 }
 
 class FeedScreenViewModel : ViewModel() {
@@ -216,5 +228,8 @@ class FeedScreenViewModel : ViewModel() {
 
     fun onDismissPublishDialog() {
         _uiState.update { it.copy(showPublishDialog = false) }
+    }
+    fun refreshFilters() {
+        _uiState.update { it.withFilters() }
     }
 }

@@ -59,7 +59,12 @@ object AuthRepository {
                     isModerator = doc.getString("role") == "moderator",
                     phone = doc.getString("phone").orEmpty(),
                     badges = (doc.get("badges") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
-                    level = doc.getString("level")
+                    level = doc.getString("level"),
+                    lat = doc.getDouble("lat"),
+                    lng = doc.getDouble("lng"),
+                    address = doc.getString("address").orEmpty()
+
+
                 )
             )
         } else {

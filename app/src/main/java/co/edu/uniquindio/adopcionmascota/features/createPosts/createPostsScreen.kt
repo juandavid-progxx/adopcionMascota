@@ -88,6 +88,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil3.compose.AsyncImage
+import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
+import co.edu.uniquindio.adopcionmascota.core.data.AiSuggestion
+import co.edu.uniquindio.adopcionmascota.features.feed.VetKind
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreatePostsScreen(
@@ -105,8 +108,8 @@ fun CreatePostsScreen(
     if (state.showMapSelector) {
         LocationPickerScreen(
             title = state.selectedPetCategory.locationLabel(),
-            initialLat = state.selectedLocation?.latitude,
-            initialLng = state.selectedLocation?.longitude,
+            initialLat = state.selectedLocation?.latitude ?: SessionManager.currentUser?.lat,
+            initialLng = state.selectedLocation?.longitude ?: SessionManager.currentUser?.lng,
             onConfirm = { address, lat, lng ->
                 viewModel.onSelectMapLocation(PostLocation(address, lat, lng))
             },
@@ -191,6 +194,27 @@ fun CreatePostsScreen(
                 selected = state.selectedPetCategory,
                 onSelected = { viewModel.onPetCategorySelected(it) }
             )
+            if (state.selectedPetCategory == PetCategory.VETERINARY) {
+                SectionHeader(title = "Tipo de servicio veterinario *")
+                VetKindSelector(
+                    selected = state.vetKind,
+                    onSelected = { viewModel.onVetKindSelected(it) }
+                )
+                if (state.vetKind == VetKind.SERVICE_PROVIDER) {
+                    ServiceProviderForm(
+                        blocks = state.scheduleBlocks,
+                        phones = state.phones,
+                        error = state.providerError,
+                        onToggleDay = { b, d -> viewModel.onToggleDay(b, d) },
+                        onTimeChange = { b, open, v -> viewModel.onTimeChange(b, open, v) },
+                        onAddBlock = { viewModel.onAddBlock() },
+                        onRemoveBlock = { viewModel.onRemoveBlock(it) },
+                        onPhoneChange = { i, v -> viewModel.onPhoneChange(i, v) },
+                        onAddPhone = { viewModel.onAddPhone() },
+                        onRemovePhone = { viewModel.onRemovePhone(it) }
+                    )
+                }
+            }
             // 3. Tipo de animal (no aplica en Veterinaria)
             if (fields.animal) {
                 SectionHeader(title = "Tipo de animal *")
@@ -261,6 +285,13 @@ fun CreatePostsScreen(
                 maxLength = state.maxDescriptionLength,
                 isError = state.descriptionError != null,
                 errorMessage = state.descriptionError
+            )
+            AiSuggestionCard(
+                loading = state.aiLoading,
+                suggestion = state.aiSuggestion,
+                current = state.selectedPetCategory,
+                onApply = { viewModel.onApplySuggestion() },
+                onDismiss = { viewModel.onDismissSuggestion() }
             )
 
             // 10. Selección de ubicación en el mapa
@@ -405,6 +436,63 @@ private fun ErrorText(text: String) {
         fontSize = 12.sp,
         modifier = Modifier.padding(start = 4.dp, top = 2.dp)
     )
+}
+@Composable
+private fun AiSuggestionCard(
+    loading: Boolean,
+    suggestion: AiSuggestion?,
+    current: PetCategory,
+    onApply: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    if (!loading && suggestion == null) return
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFE8EAF6))
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            if (loading) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text("Analizando tu publicación con IA...", fontSize = 14.sp)
+                }
+            } else if (suggestion != null) {
+                if (suggestion.category == current) {
+                    Text(
+                        text = "✨ La IA coincide con tu categoría: ${suggestion.category.emoji} ${suggestion.category.displayName}",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF1A237E)
+                    )
+                } else {
+                    Text(
+                        text = "✨ La IA sugiere: ${suggestion.category.emoji} ${suggestion.category.displayName}",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1A237E)
+                    )
+                    Text(suggestion.reason, fontSize = 13.sp, color = Color.DarkGray)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = onApply,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3949AB))
+                        ) { Text("Aplicar", color = Color.White) }
+                        TextButton(onClick = onDismiss) { Text("Mantener la mía") }
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Fuente: ${suggestion.source}",
+                    fontSize = 11.sp,
+                    color = Color.Gray
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -944,5 +1032,6 @@ private fun BreedDropdown(
                 modifier = Modifier.padding(start = 16.dp, top = 4.dp)
             )
         }
+
     }
 }

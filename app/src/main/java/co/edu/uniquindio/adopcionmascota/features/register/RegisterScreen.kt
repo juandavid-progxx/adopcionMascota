@@ -49,6 +49,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.core.util.RequestResult
+import androidx.compose.ui.platform.LocalContext
+import co.edu.uniquindio.adopcionmascota.core.data.ColombiaData
+import co.edu.uniquindio.adopcionmascota.core.ui.DropdownField
 
 @Composable
 fun RegisterScreen(
@@ -190,15 +193,24 @@ fun RegisterScreen(
             keyboardType = KeyboardType.Phone
         )
 
-        // Campo 4: Ciudad
-        CustomRegisterField(
-            label = "Ciudad",
-            value = state.city,
-            onValueChange = { viewModel.onCityChange(it) },
-            placeholder = "Bogotá, Colombia",
-            isError = state.cityError != null,
-            errorMessage = state.cityError,
-            keyboardType = KeyboardType.Text
+        // Campo 4: Departamento y municipio
+        val context = LocalContext.current
+        DropdownField(
+            label = "Departamento",
+            value = state.department,
+            options = ColombiaData.departments(context),
+            onSelected = { viewModel.onDepartmentSelected(it) },
+            isError = state.cityError != null && state.department.isBlank(),
+            errorMessage = state.cityError
+        )
+        DropdownField(
+            label = "Municipio",
+            value = state.municipality,
+            options = ColombiaData.municipalities(context, state.department),
+            onSelected = { viewModel.onMunicipalitySelected(it) },
+            enabled = state.department.isNotBlank(),
+            isError = state.cityError != null && state.department.isNotBlank(),
+            errorMessage = state.cityError
         )
 
         // Campo 5: Contraseña

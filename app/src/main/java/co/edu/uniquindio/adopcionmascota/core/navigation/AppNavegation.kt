@@ -64,14 +64,16 @@ fun AppNavigation() {
     ) {
         composable<MainRoutes.Home> {
             HomeScreen(
-                onUserAccessClick = { navController.navigate(MainRoutes.Login) },
-                onModeratorAccessClick = { navController.navigate(MainRoutes.Login) },
-                onLoginClick = { navController.navigate(MainRoutes.Login) },
+                onUserAccessClick = { navController.navigate(MainRoutes.Login()) },
+                onModeratorAccessClick = { navController.navigate(MainRoutes.Login(moderator = true)) },
+                onLoginClick = { navController.navigate(MainRoutes.Login()) },
                 onRegisterClick = { navController.navigate(MainRoutes.Register) }
             )
         }
-        composable<MainRoutes.Login> {
+        composable<MainRoutes.Login> { backStackEntry ->
+            val route = backStackEntry.toRoute<MainRoutes.Login>()
             LoginScreen(
+                moderatorMode = route.moderator,
                 onLoginSuccess = {
                     if (SessionManager.isModerator) {
                         navController.navigate(MainRoutes.Moderation) { popUpTo(MainRoutes.Home) }
@@ -156,7 +158,7 @@ fun AppNavigation() {
             PasswordRecoveryScreen(
                 onBack = { navController.popBackStack() },
                 onLoginClick = {
-                    navController.navigate(MainRoutes.Login) {
+                    navController.navigate(MainRoutes.Login()) {
                         popUpTo(MainRoutes.Home)
                     }
                 }
