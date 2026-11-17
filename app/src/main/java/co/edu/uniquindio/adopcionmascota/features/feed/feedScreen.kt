@@ -78,6 +78,7 @@ import com.mapbox.maps.extension.compose.annotation.ViewAnnotation
 import com.mapbox.maps.viewannotation.annotationAnchor
 import com.mapbox.maps.viewannotation.geometry
 import com.mapbox.maps.viewannotation.viewAnnotationOptions
+import androidx.compose.foundation.layout.heightIn
 @Composable
 fun FeedScreen(
     viewModel: FeedScreenViewModel = viewModel(),
@@ -434,7 +435,13 @@ private fun LocationFilterRow(
             Surface(
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
-                    .clickable { onLocationSelected(location) }
+                    .clickable {
+                        onLocationSelected(
+                            if (isSelected && location != LocationFilter.ALL_COUNTRY)
+                                LocationFilter.ALL_COUNTRY
+                            else location
+                        )
+                    }
                     .border(1.dp, borderColor, RoundedCornerShape(16.dp)),
                 color = backgroundColor,
                 shape = RoundedCornerShape(16.dp)
@@ -528,54 +535,45 @@ private fun PetCardItem(
     onAdoptClick: () -> Unit,
     onToggleFavorite: () -> Unit
 ) {
+    val hasPhoto = pet.imageUrls.isNotEmpty()
+
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onPetClick() },
+        modifier = Modifier.fillMaxWidth().clickable { onPetClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
-            // Contenedor principal de imagen con esquinas redondeadas
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
+                    .then(
+                        if (hasPhoto) Modifier.heightIn(min = 180.dp, max = 420.dp)
+                        else Modifier.height(180.dp)
+                    )
                     .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                     .background(Color(pet.colorHex))
             ) {
-                // Ilustración / Avatar representativo grande
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = pet.type.emoji,
-                        fontSize = 64.sp
-                    )
-                    Text(
-                        text = pet.breed,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.DarkGray
-                    )
-                }
-                if (pet.imageUrls.isNotEmpty()) {
+                if (hasPhoto) {
                     AsyncImage(
-                        model = pet.imageUrls.first().cloudThumb(),
+                        model = pet.imageUrls.first().cloudThumb(900),
                         contentDescription = pet.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        contentScale = ContentScale.FillWidth,
+                        modifier = Modifier.fillMaxWidth()
                     )
+                } else {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(text = pet.type.emoji, fontSize = 64.sp)
+                        Text(text = pet.breed, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
+                    }
                 }
 
-                // Badge de ubicación
                 Surface(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(12.dp),
+                    modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
                     shape = RoundedCornerShape(12.dp),
                     color = Color.White.copy(alpha = 0.9f)
                 ) {
@@ -583,23 +581,19 @@ private fun PetCardItem(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = null,
-                            tint = Color(0xFF004D40),
-                            modifier = Modifier.size(14.dp)
-                        )
+                        Icon(Icons.Default.LocationOn, null, tint = Color(0xFF004D40), modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
                             text = pet.city,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF004D40)
+                            color = Color(0xFF004D40),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
 
-                // Botón de Favorito en esquina superior derecha
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -619,20 +613,14 @@ private fun PetCardItem(
                 }
             }
 
-            // Información inferior de la tarjeta
             Column(modifier = Modifier.padding(14.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text(
-                            text = pet.name,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1B5E20)
-                        )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(pet.name, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1B5E20))
                         Text(
                             text = listOf("${pet.category.emoji} ${pet.category.displayName}", pet.age, pet.size)
                                 .filter { it != "No aplica" }
@@ -641,30 +629,23 @@ private fun PetCardItem(
                             color = Color.Gray
                         )
                     }
-
-                    // Botón Adoptar
+                    Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = onAdoptClick,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF00BFA5)
-                        ),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00BFA5)),
                         shape = RoundedCornerShape(10.dp),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                            horizontal = 16.dp,
-                            vertical = 8.dp
-                        )
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         Text(
-                            text = if (pet.authorId == SessionManager.currentUser?.id) "Marcar resuelta" else pet.category.shortLabel,
+                            text = if (pet.authorId == SessionManager.currentUser?.id) "Marcar resuelta"
+                            else pet.category.shortLabel,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = Color.White
                         )
                     }
                 }
-
                 Spacer(modifier = Modifier.height(6.dp))
-
                 Text(
                     text = pet.description,
                     fontSize = 12.sp,
@@ -864,7 +845,7 @@ private fun CategoryFilterRow(
             Surface(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
-                    .clickable { onCategorySelected(category) }
+                    .clickable { onCategorySelected(if (isSelected) null else category) }
                     .border(1.dp, borderColor, RoundedCornerShape(20.dp)),
                 color = backgroundColor,
                 shape = RoundedCornerShape(20.dp)
