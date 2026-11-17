@@ -53,9 +53,15 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.layout.ContentScale
+import co.edu.uniquindio.adopcionmascota.core.ui.TourStep
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberTour
+import co.edu.uniquindio.adopcionmascota.core.ui.tourTarget
 import coil3.compose.AsyncImage
-import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
-import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 @Composable
 fun RegisterScreen(
     viewModel: RegisterViewModel = viewModel(),
@@ -63,23 +69,22 @@ fun RegisterScreen(
     onRegistered: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
-    val guide = rememberGuideState("register")
-
-    ScreenGuideDialog(
-        state = guide,
-        title = "Crear cuenta",
-        tips = listOf(
-            "Completa tu nombre, teléfono, departamento y municipio.",
-            "La foto de perfil es opcional.",
-            "La contraseña debe tener al menos 6 caracteres.",
-            "Acepta los términos y condiciones para crear tu cuenta."
+    val startTour = rememberTour(
+        "register",
+        listOf(
+            TourStep("Crear cuenta", "Completa tus datos para comenzar."),
+            TourStep("Foto de perfil", "Es opcional; puedes cambiarla después.", target = "reg_photo"),
+            TourStep("Tus datos", "Nombre, correo y teléfono.", target = "reg_name"),
+            TourStep("Ubicación", "Elige tu departamento y luego tu municipio.", target = "reg_place"),
+            TourStep("Contraseña", "Mínimo 6 caracteres. Repítela para confirmarla.", target = "reg_pass"),
+            TourStep("Términos", "Debes aceptarlos para crear la cuenta.", target = "reg_terms"),
+            TourStep("Crear cuenta", "Toca aquí cuando termines.", target = "reg_button")
         )
     )
     val context = LocalContext.current
     val photoPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri -> if (uri != null) viewModel.onProfilePhotoPicked(uri.toString()) }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -128,8 +133,7 @@ fun RegisterScreen(
         // 3. Sección para agregar fotografía
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
+                .fillMaxWidth().clip(RoundedCornerShape(12.dp)).tourTarget("reg_photo")
                 .clickable {
                     photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 }
@@ -182,15 +186,17 @@ fun RegisterScreen(
         // 4. Formulario de registro (6 campos)
 
         // Campo 1: Nombre completo
-        CustomRegisterField(
-            label = "Nombre completo",
-            value = state.fullName,
-            onValueChange = { viewModel.onFullNameChange(it) },
-            placeholder = "María Rodríguez",
-            isError = state.fullNameError != null,
-            errorMessage = state.fullNameError,
-            keyboardType = KeyboardType.Text
-        )
+        Box(Modifier.tourTarget("reg_name")) {
+            CustomRegisterField(
+                label = "Nombre completo",
+                value = state.fullName,
+                onValueChange = { viewModel.onFullNameChange(it) },
+                placeholder = "María Rodríguez",
+                isError = state.fullNameError != null,
+                errorMessage = state.fullNameError,
+                keyboardType = KeyboardType.Text
+            )
+        }
 
         // Campo 2: Correo electrónico
         CustomRegisterField(
@@ -215,6 +221,10 @@ fun RegisterScreen(
         )
 
         // Campo 4: Departamento y municipio
+        Column(
+            modifier = Modifier.tourTarget("reg_place"),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ){
         val context = LocalContext.current
         DropdownField(
             label = "Departamento",
@@ -232,38 +242,43 @@ fun RegisterScreen(
             enabled = state.department.isNotBlank(),
             isError = state.cityError != null && state.department.isNotBlank(),
             errorMessage = state.cityError
-        )
+        )}
 
         // Campo 5: Contraseña
-        CustomRegisterField(
-            label = "Contraseña",
-            value = state.password,
-            onValueChange = { viewModel.onPasswordChange(it) },
-            placeholder = "••••••••",
-            isError = state.passwordError != null,
-            errorMessage = state.passwordError,
-            isPassword = true,
-            keyboardType = KeyboardType.Password
-        )
+        Column(
+            modifier = Modifier.tourTarget("reg_pass"),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            CustomRegisterField(
+                label = "Contraseña",
+                value = state.password,
+                onValueChange = { viewModel.onPasswordChange(it) },
+                placeholder = "••••••••",
+                isError = state.passwordError != null,
+                errorMessage = state.passwordError,
+                isPassword = true,
+                keyboardType = KeyboardType.Password
+            )
 
-        // Campo 6: Confirmar contraseña
-        CustomRegisterField(
-            label = "Confirmar contraseña",
-            value = state.confirmPassword,
-            onValueChange = { viewModel.onConfirmPasswordChange(it) },
-            placeholder = "••••••••",
-            isError = state.confirmPasswordError != null,
-            errorMessage = state.confirmPasswordError,
-            isPassword = true,
-            keyboardType = KeyboardType.Password
-        )
+            // Campo 6: Confirmar contraseña
+            CustomRegisterField(
+                label = "Confirmar contraseña",
+                value = state.confirmPassword,
+                onValueChange = { viewModel.onConfirmPasswordChange(it) },
+                placeholder = "••••••••",
+                isError = state.confirmPasswordError != null,
+                errorMessage = state.confirmPasswordError,
+                isPassword = true,
+                keyboardType = KeyboardType.Password
+            )
 
-        Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+        }
 
         // 5. Términos y condiciones
         Row(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth().tourTarget("reg_terms")
                 .clickable { viewModel.onTermsAcceptedChange(!state.termsAccepted) }
                 .padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -304,8 +319,7 @@ fun RegisterScreen(
             Button(
                 onClick = { viewModel.register(context.applicationContext, onSuccess = onRegistered) },
                 modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .height(50.dp),
+                    .fillMaxWidth(0.9f).height(50.dp).tourTarget("reg_button"),
                 enabled = !state.isRegistering,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF00796B),
@@ -369,6 +383,7 @@ private fun CustomRegisterField(
     isPassword: Boolean = false,
     keyboardType: KeyboardType = KeyboardType.Text
 ) {
+    var visible by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = value,
@@ -377,7 +392,18 @@ private fun CustomRegisterField(
             placeholder = { Text(text = placeholder, color = Color(0xFF90A4AE), fontSize = 13.sp) },
             isError = isError,
             singleLine = true,
-            visualTransformation = if (isPassword) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
+            visualTransformation = if (isPassword && !visible) PasswordVisualTransformation()
+            else androidx.compose.ui.text.input.VisualTransformation.None,
+            trailingIcon = if (isPassword) {
+                {
+                    IconButton(onClick = { visible = !visible }) {
+                        Icon(
+                            imageVector = if (visible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (visible) "Ocultar contraseña" else "Mostrar contraseña"
+                        )
+                    }
+                }
+            } else null,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             shape = RoundedCornerShape(8.dp),
             modifier = Modifier.fillMaxWidth(),
