@@ -16,7 +16,8 @@ import co.edu.uniquindio.adopcionmascota.core.data.ReputationManager
 import co.edu.uniquindio.adopcionmascota.core.data.UserLevel
 import co.edu.uniquindio.adopcionmascota.core.data.AuthRepository
 import co.edu.uniquindio.adopcionmascota.core.data.ReauthRequiredException
-
+import android.content.Context
+import co.edu.uniquindio.adopcionmascota.core.data.CloudinaryUploader
 data class ProfileUiState(
     val user: User? = null,
     val active: Int = 0,      // verificadas
@@ -31,7 +32,9 @@ data class ProfileUiState(
     val level: UserLevel = UserLevel.FRIEND,
     val deleteMessage: String? = null,
     val needsRelogin: Boolean = false,
-    val showLocationPicker: Boolean = false
+    val showLocationPicker: Boolean = false,
+    val photoUploading: Boolean = false,
+    val photoError: String? = null
 )
 
 class ProfileViewModel : ViewModel() {
@@ -147,6 +150,20 @@ class ProfileViewModel : ViewModel() {
         SessionManager.updateLocation(address, lat, lng)
         _uiState.update {
             it.copy(user = SessionManager.currentUser, showLocationPicker = false)
+        }
+    }
+    fun onPhotoPicked(appContext: Context, uri: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(photoUploading = true, photoError = null) }
+            try {
+                val url = CloudinaryUploader.upload(appContext, uri)
+                SessionManager.updatePhoto(url)
+                _uiState.update { it.copy(user = SessionManager.currentUser, photoUploading = false) }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(photoUploading = false, photoError = "No se pudo subir la foto. Inténtalo de nuevo.")
+                }
+            }
         }
     }
 }

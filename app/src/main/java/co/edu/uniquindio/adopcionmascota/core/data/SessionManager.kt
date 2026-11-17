@@ -13,7 +13,8 @@ data class User(
     val level: String? = null,
     val lat: Double? = null,
     val lng: Double? = null,
-    val address: String = ""
+    val address: String = "",
+    val photo: String = ""
 )
 
 object SessionManager {
@@ -50,5 +51,11 @@ object SessionManager {
         ReputationManager.reset()
         FirebaseAuth.getInstance().signOut()
         currentUser = null
+    }
+    fun updatePhoto(url: String) {
+        val user = currentUser ?: return
+        currentUser = user.copy(photo = url)
+        FirebaseFirestore.getInstance().collection("users").document(user.id)
+            .update("photo", url)
     }
 }

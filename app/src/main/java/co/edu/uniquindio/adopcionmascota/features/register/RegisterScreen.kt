@@ -52,7 +52,12 @@ import co.edu.uniquindio.adopcionmascota.core.util.RequestResult
 import androidx.compose.ui.platform.LocalContext
 import co.edu.uniquindio.adopcionmascota.core.data.ColombiaData
 import co.edu.uniquindio.adopcionmascota.core.ui.DropdownField
-
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil3.compose.AsyncImage
 @Composable
 fun RegisterScreen(
     viewModel: RegisterViewModel = viewModel(),
@@ -60,6 +65,10 @@ fun RegisterScreen(
     onRegistered: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val photoPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri -> if (uri != null) viewModel.onProfilePhotoPicked(uri.toString()) }
 
     Column(
         modifier = Modifier
@@ -111,7 +120,9 @@ fun RegisterScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .clickable { viewModel.onSelectProfilePhoto() }
+                .clickable {
+                    photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }
                 .padding(vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -119,21 +130,21 @@ fun RegisterScreen(
                 modifier = Modifier
                     .size(54.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF91EDE0)), // Turquesa claro
+                    .background(Color(0xFF91EDE0)),
                 contentAlignment = Alignment.Center
             ) {
                 if (state.profilePhoto != null) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = "Foto agregada",
-                        tint = Color(0xFF00796B),
-                        modifier = Modifier.size(28.dp)
+                    AsyncImage(
+                        model = state.profilePhoto,
+                        contentDescription = "Foto de perfil",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
                 } else {
                     Icon(
                         imageVector = Icons.Default.Pets,
-                        contentDescription = "Huella de mascota",
-                        tint = Color(0xFF311B92), // Morado oscuro
+                        contentDescription = null,
+                        tint = Color(0xFF311B92),
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -281,7 +292,7 @@ fun RegisterScreen(
             contentAlignment = Alignment.Center
         ) {
             Button(
-                onClick = { viewModel.register(onSuccess = onRegistered) },
+                onClick = { viewModel.register(context.applicationContext, onSuccess = onRegistered) },
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .height(50.dp),

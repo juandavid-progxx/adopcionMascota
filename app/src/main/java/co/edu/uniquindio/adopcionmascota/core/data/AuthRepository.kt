@@ -20,7 +20,7 @@ object AuthRepository {
     private val db get() = FirebaseFirestore.getInstance()
 
     // Crea la cuenta en Firebase Auth y guarda el perfil en Firestore
-    suspend fun register(name: String, email: String, password: String, phone: String, city: String) {
+    suspend fun register(name: String, email: String, password: String, phone: String, city: String, photoUrl: String = "") {
         val cleanEmail = email.trim().lowercase()
         val uid = auth.createUserWithEmailAndPassword(cleanEmail, password).await().user!!.uid
         db.collection("users").document(uid).set(
@@ -29,10 +29,11 @@ object AuthRepository {
                 "email" to cleanEmail,
                 "phone" to phone.trim(),
                 "city" to city.trim(),
-                "role" to "user"
+                "role" to "user",
+                "photo" to photoUrl
             )
         ).await()
-        SessionManager.setUser(User(uid, name.trim(), cleanEmail, false, phone.trim()))
+        SessionManager.setUser(User(uid, name.trim(), cleanEmail, false, phone.trim(), photo = photoUrl))
     }
 
     suspend fun login(email: String, password: String) {
@@ -62,7 +63,8 @@ object AuthRepository {
                     level = doc.getString("level"),
                     lat = doc.getDouble("lat"),
                     lng = doc.getDouble("lng"),
-                    address = doc.getString("address").orEmpty()
+                    address = doc.getString("address").orEmpty(),
+                    photo = doc.getString("photo").orEmpty()
 
 
                 )
@@ -71,8 +73,17 @@ object AuthRepository {
             // Primera vez que entra (por ejemplo con Google): crear su perfil
             val name = fbUser?.displayName ?: fbUser?.email?.substringBefore("@") ?: "Usuario"
             val email = fbUser?.email.orEmpty()
-            ref.set(mapOf("name" to name, "email" to email, "phone" to "", "role" to "user")).await()
-            SessionManager.setUser(User(uid, name, email, false, ""))
+            val photo = fbUser?.photoUrl?.toString() ?: ""
+            ref.set(
+                mapOf(
+                    "name" to name,
+                    "email" to email,
+                    "phone" to "",
+                    "role" to "user",
+                    "photo" to photo
+                )
+            ).await()
+            SessionManager.setUser(User(id = uid, name = name, email = email, photo = photo))
         }
     }
 
