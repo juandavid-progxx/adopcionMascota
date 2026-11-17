@@ -57,7 +57,8 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit = {},
     onForgotPasswordClick: () -> Unit = {},
     onRegisterClick: () -> Unit = {},
-    onGoogleLoginClick: () -> Unit = {}
+    onGoogleLoginClick: () -> Unit = {},
+    moderatorMode: Boolean = false
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -109,7 +110,7 @@ fun LoginScreen(
 
             // 4. Texto descriptivo
             Text(
-                text = "Conectamos mascotas con hogares llenos de amor",
+                text = if (moderatorMode) "Acceso moderador" else "Conectamos mascotas con hogares llenos de amor",
                 fontSize = 13.sp,
                 color = Color(0xFF455A64),
                 textAlign = TextAlign.Center,
@@ -202,6 +203,7 @@ fun LoginScreen(
                         textAlign = TextAlign.Center
                     )
                 }
+
                 is RequestResult.Success -> {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
@@ -211,101 +213,106 @@ fun LoginScreen(
                         fontSize = 13.sp
                     )
                 }
+
                 else -> {}
             }
+            if (!moderatorMode) {
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            // 8. Separador: o continúa con
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = Color(0xFFC7D6D2),
-                    thickness = 1.dp
-                )
-                Text(
-                    text = "  o continúa con  ",
-                    fontSize = 12.sp,
-                    color = Color(0xFF455A64)
-                )
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = Color(0xFFC7D6D2),
-                    thickness = 1.dp
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // 9. Botón de inicio de sesión con Google
-            OutlinedButton(
-                onClick = {
-                    viewModel.loginWithGoogle(
-                        getToken = { GoogleSignInHelper.getIdToken(context) },
-                        onSuccess = onGoogleLoginClick
+                // 8. Separador: o continúa con
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = Color(0xFFC7D6D2),
+                        thickness = 1.dp
                     )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = CircleShape,
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = Color.White
-                ),
-                border = ButtonDefaults.outlinedButtonBorder.copy(
-                    brush = androidx.compose.ui.graphics.SolidColor(Color(0xFFC7D6D2))
-                )
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Logo vectorial/representativo de Google
-                    Surface(
-                        modifier = Modifier.size(20.dp),
-                        shape = CircleShape,
-                        color = Color(0xFF4285F4)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = "G",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "Google",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF263238)
+                        text = "  o continúa con  ",
+                        fontSize = 12.sp,
+                        color = Color(0xFF455A64)
                     )
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = Color(0xFFC7D6D2),
+                        thickness = 1.dp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // 9. Botón de inicio de sesión con Google
+                OutlinedButton(
+                    onClick = {
+                        viewModel.loginWithGoogle(
+                            getToken = { GoogleSignInHelper.getIdToken(context) },
+                            onSuccess = onGoogleLoginClick
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = CircleShape,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = Color.White
+                    ),
+                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                        brush = androidx.compose.ui.graphics.SolidColor(Color(0xFFC7D6D2))
+                    )
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Logo vectorial/representativo de Google
+                        Surface(
+                            modifier = Modifier.size(20.dp),
+                            shape = CircleShape,
+                            color = Color(0xFF4285F4)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "G",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Google",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF263238)
+                        )
+                    }
                 }
             }
         }
+        if (!moderatorMode) {
 
-        Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-        // 10. Enlace para registrarse
-        Row(
-            modifier = Modifier
-                .padding(bottom = 16.dp)
-                .clickable { onRegisterClick() },
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "¿No tienes cuenta? ",
-                fontSize = 13.sp,
-                color = Color(0xFF455A64)
-            )
-            Text(
-                text = "Regístrate",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF00796B)
-            )
+            // 10. Enlace para registrarse
+            Row(
+                modifier = Modifier
+                    .padding(bottom = 16.dp)
+                    .clickable { onRegisterClick() },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "¿No tienes cuenta? ",
+                    fontSize = 13.sp,
+                    color = Color(0xFF455A64)
+                )
+                Text(
+                    text = "Regístrate",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF00796B)
+                )
+            }
         }
     }
 }

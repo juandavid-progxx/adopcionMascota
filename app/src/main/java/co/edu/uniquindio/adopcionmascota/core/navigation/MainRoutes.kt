@@ -10,7 +10,7 @@ sealed class MainRoutes {
     data object Home : MainRoutes()
 
     @Serializable
-    data object Login : MainRoutes()
+    data class Login(val moderator: Boolean = false) : MainRoutes()
     @Serializable
     data object Achievements : MainRoutes()
     @Serializable
