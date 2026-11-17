@@ -79,6 +79,9 @@ import com.mapbox.maps.viewannotation.annotationAnchor
 import com.mapbox.maps.viewannotation.geometry
 import com.mapbox.maps.viewannotation.viewAnnotationOptions
 import androidx.compose.foundation.layout.heightIn
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
 @Composable
 fun FeedScreen(
     viewModel: FeedScreenViewModel = viewModel(),
@@ -89,6 +92,7 @@ fun FeedScreen(
     onBackFromDetail: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val guide = rememberGuideState("feed")
     LaunchedEffect(initialPetId) {
         initialPetId?.let { viewModel.openPetById(it) }
     }
@@ -112,7 +116,19 @@ fun FeedScreen(
         ResolveDialog(state = state, viewModel = viewModel)
         return
     }
-
+    ScreenGuideDialog(
+        state = guide,
+        title = "Pantalla principal",
+        tips = listOf(
+            "Usa el buscador para encontrar mascotas por nombre.",
+            "Filtra por categoría: adopción, perdidos, encontrados, hogar de paso o veterinaria.",
+            "Usa los filtros de ubicación para ver publicaciones cercanas, de tu ciudad o de todo el país.",
+            "Cambia entre vista de Lista y Mapa.",
+            "Toca una publicación para ver su detalle.",
+            "Toca el botón + para crear tu propia publicación.",
+            "Abajo tienes Inicio, Mapa, Alertas (notificaciones) y Perfil."
+        )
+    )
     Scaffold(
         bottomBar = {
             BottomNavigationBar(
@@ -157,7 +173,8 @@ fun FeedScreen(
             // 1. Barra superior de búsqueda
             SearchBarHeader(
                 searchQuery = state.searchQuery,
-                onSearchChange = { viewModel.onSearchQueryChange(it) }
+                onSearchChange = { viewModel.onSearchQueryChange(it) },
+                onHelpClick = { guide.open()}
             )
 
             // 2. Filtros por tipo de mascota
@@ -300,7 +317,8 @@ fun FeedScreen(
 @Composable
 private fun SearchBarHeader(
     searchQuery: String,
-    onSearchChange: (String) -> Unit
+    onSearchChange: (String) -> Unit,
+    onHelpClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -367,6 +385,7 @@ private fun SearchBarHeader(
                 modifier = Modifier.size(24.dp)
             )
         }
+        GuideHelpButton(tint = Color(0xFF004D40), onClick = onHelpClick)   // <- nuevo
     }
 }
 

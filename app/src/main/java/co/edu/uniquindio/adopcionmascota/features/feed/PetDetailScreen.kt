@@ -70,6 +70,9 @@ import com.mapbox.maps.extension.compose.annotation.ViewAnnotation
 import com.mapbox.maps.viewannotation.annotationAnchor
 import com.mapbox.maps.viewannotation.geometry
 import com.mapbox.maps.viewannotation.viewAnnotationOptions
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -82,7 +85,16 @@ fun PetDetailScreen(
     onComment: (Pet, String) -> Unit = { _, _ -> }
 ) {
     val isOwner = pet.authorId == SessionManager.currentUser?.id
+    val guide = rememberGuideState("pet_detail")
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
+
+    ScreenGuideDialog(guide, "Detalle de la publicación", listOf(
+        "Toca una foto para ampliarla.",
+        "Revisa los datos, la salud y la ubicación en el mapa.",
+        "Usa el botón de acción (por ejemplo \"Me interesa adoptar\") para contactar al autor.",
+        "Puedes marcarla como favorita o como importante.",
+        "Deja un comentario al final de la publicación."
+    ))
 
     Scaffold(
         topBar = {
@@ -94,6 +106,7 @@ fun PetDetailScreen(
                     }
                 },
                 actions = {
+                    GuideHelpButton { guide.open() }
                     IconButton(onClick = { onToggleFavorite(pet) }) {
                         Icon(
                             imageVector = if (pet.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,

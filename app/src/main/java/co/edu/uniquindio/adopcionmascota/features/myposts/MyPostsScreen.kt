@@ -23,6 +23,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.features.feed.Pet
 import co.edu.uniquindio.adopcionmascota.features.feed.PostStatus
 import co.edu.uniquindio.adopcionmascota.features.feed.resolveLabel
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,6 +34,13 @@ fun MyPostsScreen(
     onBack: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val guide = rememberGuideState("my_posts")
+    ScreenGuideDialog(guide, "Mis publicaciones", listOf(
+        "Aquí ves todas tus publicaciones y su estado: pendiente, verificada, rechazada o resuelta.",
+        "Si una fue rechazada, lee el motivo, edítala y envíala de nuevo.",
+        "Cuando la mascota ya tenga hogar o aparezca, márcala como resuelta.",
+        "Puedes editar o eliminar tus publicaciones."
+    ))
 
     Scaffold(
         topBar = {
@@ -40,6 +50,9 @@ fun MyPostsScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
+                },
+                actions = {
+                    GuideHelpButton { guide.open() }
                 }
             )
         }

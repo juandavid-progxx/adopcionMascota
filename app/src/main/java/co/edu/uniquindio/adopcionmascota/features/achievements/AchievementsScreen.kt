@@ -25,6 +25,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.core.data.Badge
 import co.edu.uniquindio.adopcionmascota.core.data.UserLevel
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +36,12 @@ fun AchievementsScreen(
     onBack: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val guide = rememberGuideState("achievements")
+    ScreenGuideDialog(guide, "Logros y reputación", listOf(
+        "Ganas puntos al crear publicaciones, comentar, recibir ❤️ y resolver casos.",
+        "Los puntos te suben de nivel.",
+        "Las insignias bloqueadas se desbloquean al cumplir su requisito."
+    ))
 
     Scaffold(
         topBar = {
@@ -42,6 +51,9 @@ fun AchievementsScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
+                },
+                actions = {
+                    GuideHelpButton { guide.open() }
                 }
             )
         }

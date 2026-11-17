@@ -23,6 +23,9 @@ import androidx.compose.ui.layout.ContentScale
 import co.edu.uniquindio.adopcionmascota.core.data.cloudThumb
 import coil3.compose.AsyncImage
 import androidx.compose.foundation.shape.RoundedCornerShape
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModerationScreen(
@@ -30,13 +33,21 @@ fun ModerationScreen(
     onLogout: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val guide = rememberGuideState("moderation")
     val list = if (state.selectedTab == 0) state.pending else state.all
 
+    ScreenGuideDialog(guide, "Panel de moderación", listOf(
+        "\"Pendientes\" muestra las publicaciones que esperan revisión.",
+        "Toca \"Verificar\" para aprobar una publicación.",
+        "Para rechazar debes escribir el motivo, que le llegará al autor.",
+        "\"Todas\" muestra el historial completo."
+    ))
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Panel de moderación", fontWeight = FontWeight.Bold) },
                 actions = {
+                    GuideHelpButton { guide.open() }
                     IconButton(onClick = onLogout) {
                         Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
                     }

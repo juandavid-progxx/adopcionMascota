@@ -31,6 +31,9 @@ import androidx.compose.ui.platform.LocalContext
 import coil3.compose.AsyncImage
 import co.edu.uniquindio.adopcionmascota.core.data.cloudThumb
 import androidx.compose.foundation.clickable
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -42,6 +45,7 @@ fun ProfileScreen(
 
 ) {
     val state by viewModel.uiState.collectAsState()
+    val guide = rememberGuideState("profile")
     val context = LocalContext.current
     val photoPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -57,6 +61,13 @@ fun ProfileScreen(
         )
         return
     }
+    ScreenGuideDialog(guide, "Mi perfil", listOf(
+        "Toca tu foto para cambiarla.",
+        "Define tu ubicación en \"Mi ubicación\" para ver mascotas cercanas.",
+        "Aquí ves tus puntos y tu nivel. Sube de nivel participando.",
+        "En \"Mis publicaciones\" puedes editar o eliminar las tuyas.",
+        "\"Editar mis datos\" cambia tu nombre y teléfono."
+    ))
 
     Scaffold(
         topBar = {
@@ -66,6 +77,9 @@ fun ProfileScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
+                },
+                actions = {
+                    GuideHelpButton { guide.open() }
                 }
             )
         }

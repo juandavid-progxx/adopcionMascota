@@ -26,6 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import co.edu.uniquindio.adopcionmascota.core.data.NotificationRepository
 import co.edu.uniquindio.adopcionmascota.core.ui.Text
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RequesterProfileScreen(
@@ -34,9 +37,14 @@ fun RequesterProfileScreen(
     onOpenPet: (String) -> Unit = {}
 ) {
     val all by NotificationRepository.all.collectAsState()
+    val guide = rememberGuideState("requester")
     val n = all.find { it.id == notificationId }
     val context = LocalContext.current
-
+    ScreenGuideDialog(guide, "Perfil del solicitante", listOf(
+        "Aquí ves los datos de contacto de quien envió la solicitud.",
+        "Puedes llamarle o escribirle un correo.",
+        "\"Ver la publicación\" te lleva al anuncio."
+    ))
     Scaffold(
         topBar = {
             TopAppBar(
@@ -45,6 +53,9 @@ fun RequesterProfileScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
+                },
+                actions = {
+                    GuideHelpButton { guide.open() }
                 }
             )
         }

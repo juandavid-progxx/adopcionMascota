@@ -28,6 +28,9 @@ import co.edu.uniquindio.adopcionmascota.core.data.AppNotification
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,7 +42,13 @@ fun NotificationsScreen(
     onOpenAchievements: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
-
+    val guide = rememberGuideState("notifications")
+    ScreenGuideDialog(guide, "Notificaciones", listOf(
+        "Aquí llegan los avisos de comentarios, solicitudes y cambios en tus publicaciones.",
+        "Toca una notificación para abrirla.",
+        "Si alguien envió una solicitud, verás sus datos de contacto.",
+        "\"Marcar todas\" deja todas las notificaciones como leídas."
+    ))
     Scaffold(
         topBar = {
             TopAppBar(
@@ -50,6 +59,7 @@ fun NotificationsScreen(
                     }
                 },
                 actions = {
+                    GuideHelpButton { guide.open() }
                     TextButton(onClick = { viewModel.onMarkAllRead() }) { Text("Marcar todas") }
                 }
             )

@@ -1,7 +1,6 @@
 package co.edu.uniquindio.adopcionmascota.features.login
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,6 +50,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.core.util.RequestResult
 import androidx.compose.ui.platform.LocalContext
 import co.edu.uniquindio.adopcionmascota.core.data.GoogleSignInHelper
+import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
@@ -61,8 +62,22 @@ fun LoginScreen(
     moderatorMode: Boolean = false
 ) {
     val state by viewModel.uiState.collectAsState()
+    val guide = rememberGuideState("login")
     val context = LocalContext.current
 
+    ScreenGuideDialog(
+        state = guide,
+        title = if (moderatorMode) "Acceso moderador" else "Iniciar sesión",
+        tips = if (moderatorMode) listOf(
+            "Escribe el correo y la contraseña de tu cuenta de moderador.",
+            "Toca \"Iniciar sesión\" para entrar al panel de moderación."
+        ) else listOf(
+            "Escribe tu correo y contraseña y toca \"Iniciar sesión\".",
+            "Si la olvidaste, toca \"¿Olvidaste tu contraseña?\" y te enviamos un enlace.",
+            "También puedes entrar con tu cuenta de Google.",
+            "Si no tienes cuenta, toca \"Regístrate\"."
+        )
+    )
     Column(
         modifier = Modifier
             .fillMaxSize()

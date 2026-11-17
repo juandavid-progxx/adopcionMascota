@@ -54,6 +54,8 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
+import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
 @Composable
 fun RegisterScreen(
     viewModel: RegisterViewModel = viewModel(),
@@ -61,6 +63,18 @@ fun RegisterScreen(
     onRegistered: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val guide = rememberGuideState("register")
+
+    ScreenGuideDialog(
+        state = guide,
+        title = "Crear cuenta",
+        tips = listOf(
+            "Completa tu nombre, teléfono, departamento y municipio.",
+            "La foto de perfil es opcional.",
+            "La contraseña debe tener al menos 6 caracteres.",
+            "Acepta los términos y condiciones para crear tu cuenta."
+        )
+    )
     val context = LocalContext.current
     val photoPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()

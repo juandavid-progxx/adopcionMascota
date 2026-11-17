@@ -47,7 +47,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.adopcionmascota.core.util.RequestResult
-
+import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
 @Composable
 fun PasswordRecoveryScreen(
     viewModel: PasswordRecoveryViewModel = viewModel(),
@@ -55,7 +56,17 @@ fun PasswordRecoveryScreen(
     onLoginClick: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val guide = rememberGuideState("password_recovery")
 
+    ScreenGuideDialog(
+        state = guide,
+        title = "Recuperar acceso",
+        tips = listOf(
+            "Escribe el correo con el que te registraste.",
+            "Te enviaremos un enlace para crear una contraseña nueva.",
+            "El enlace expira en 30 minutos."
+        )
+    )
     Column(
         modifier = Modifier
             .fillMaxSize()

@@ -91,6 +91,9 @@ import coil3.compose.AsyncImage
 import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
 import co.edu.uniquindio.adopcionmascota.core.data.AiSuggestion
 import co.edu.uniquindio.adopcionmascota.features.feed.VetKind
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreatePostsScreen(
@@ -98,6 +101,7 @@ fun CreatePostsScreen(
     onBack: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val guide = rememberGuideState("create_post")
     val fields = state.selectedPetCategory.fields()
     val context = LocalContext.current
     val photoPicker = rememberLauncherForActivityResult(
@@ -117,6 +121,14 @@ fun CreatePostsScreen(
         )
         return
     }
+    ScreenGuideDialog(guide, "Nueva publicación", listOf(
+        "Agrega al menos una foto.",
+        "Elige la categoría: los campos cambian según la que escojas.",
+        "Escribe un título claro y una descripción con los detalles.",
+        "La IA puede sugerirte la categoría correcta.",
+        "Marca la ubicación en el mapa.",
+        "Toca \"Publicar\": un moderador la revisará antes de mostrarla a todos."
+    ))
 
     Scaffold(
         topBar = {
@@ -139,6 +151,7 @@ fun CreatePostsScreen(
                     }
                 },
                 actions = {
+                    GuideHelpButton(tint = Color.White) { guide.open() }
                     TextButton(
                         onClick = { viewModel.publishPost(context.applicationContext, onSuccess = onBack) },
                         enabled = !state.isPublishing
