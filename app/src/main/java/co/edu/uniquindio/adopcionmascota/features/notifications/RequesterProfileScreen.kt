@@ -25,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import co.edu.uniquindio.adopcionmascota.core.data.NotificationRepository
-
+import co.edu.uniquindio.adopcionmascota.core.ui.Text
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RequesterProfileScreen(

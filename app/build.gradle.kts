@@ -78,5 +78,6 @@ dependencies {
     // Mapbox
     implementation("com.mapbox.maps:android-ndk27:11.29.1")
     implementation("com.mapbox.extension:maps-compose-ndk27:11.29.1")
+    implementation("com.google.mlkit:translate:17.0.3")
 
 }
