@@ -46,9 +46,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.edu.uniquindio.adopcionmascota.core.ui.TourStep
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberTour
+import co.edu.uniquindio.adopcionmascota.core.ui.tourTarget
 import co.edu.uniquindio.adopcionmascota.core.util.RequestResult
-import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
-import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
+
 @Composable
 fun PasswordRecoveryScreen(
     viewModel: PasswordRecoveryViewModel = viewModel(),
@@ -56,15 +58,12 @@ fun PasswordRecoveryScreen(
     onLoginClick: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
-    val guide = rememberGuideState("password_recovery")
-
-    ScreenGuideDialog(
-        state = guide,
-        title = "Recuperar acceso",
-        tips = listOf(
-            "Escribe el correo con el que te registraste.",
-            "Te enviaremos un enlace para crear una contraseña nueva.",
-            "El enlace expira en 30 minutos."
+    val startTour = rememberTour(
+        "password_recovery",
+        listOf(
+            TourStep("Recuperar acceso", "Te ayudamos a crear una contraseña nueva."),
+            TourStep("Tu correo", "Escribe el correo con el que te registraste.", target = "rec_email"),
+            TourStep("Enviar enlace", "Te llega un enlace que expira en 30 minutos.", target = "rec_button")
         )
     )
     Column(
@@ -171,7 +170,7 @@ fun PasswordRecoveryScreen(
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().tourTarget("rec_email"),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.White,
                         unfocusedContainerColor = Color.White,
@@ -199,8 +198,7 @@ fun PasswordRecoveryScreen(
             Button(
                 onClick = { viewModel.sendRecoveryLink() },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
+                    .fillMaxWidth().height(52.dp).tourTarget("rec_button"),
                 enabled = !state.isSending,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF00695C),

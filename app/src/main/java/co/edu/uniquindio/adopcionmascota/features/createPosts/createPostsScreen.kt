@@ -90,10 +90,11 @@ import androidx.compose.ui.platform.LocalContext
 import coil3.compose.AsyncImage
 import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
 import co.edu.uniquindio.adopcionmascota.core.data.AiSuggestion
-import co.edu.uniquindio.adopcionmascota.features.feed.VetKind
 import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
-import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
-import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
+import co.edu.uniquindio.adopcionmascota.features.feed.VetKind
+import co.edu.uniquindio.adopcionmascota.core.ui.TourStep
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberTour
+import co.edu.uniquindio.adopcionmascota.core.ui.tourTarget
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreatePostsScreen(
@@ -101,7 +102,6 @@ fun CreatePostsScreen(
     onBack: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
-    val guide = rememberGuideState("create_post")
     val fields = state.selectedPetCategory.fields()
     val context = LocalContext.current
     val photoPicker = rememberLauncherForActivityResult(
@@ -121,14 +121,18 @@ fun CreatePostsScreen(
         )
         return
     }
-    ScreenGuideDialog(guide, "Nueva publicación", listOf(
-        "Agrega al menos una foto.",
-        "Elige la categoría: los campos cambian según la que escojas.",
-        "Escribe un título claro y una descripción con los detalles.",
-        "La IA puede sugerirte la categoría correcta.",
-        "Marca la ubicación en el mapa.",
-        "Toca \"Publicar\": un moderador la revisará antes de mostrarla a todos."
-    ))
+    val startTour = rememberTour(
+        "create_post",
+        listOf(
+            TourStep("Nueva publicación", "Te guiamos por el formulario, de arriba hacia abajo."),
+            TourStep("Fotos", "Agrega al menos una foto (hasta 5).", target = "create_photos"),
+            TourStep("Categoría", "Los campos del formulario cambian según la que escojas.", target = "create_category"),
+            TourStep("Título", "Escribe un título claro.", target = "create_title"),
+            TourStep("Descripción", "Cuenta los detalles. La IA puede sugerirte la categoría correcta.", target = "create_desc"),
+            TourStep("Ubicación", "Toca el mapa para marcar dónde está.", target = "create_location"),
+            TourStep("Publicar", "Un moderador la revisará antes de mostrarla a todos.", target = "create_publish")
+        )
+    )
 
     Scaffold(
         topBar = {
@@ -151,10 +155,11 @@ fun CreatePostsScreen(
                     }
                 },
                 actions = {
-                    GuideHelpButton(tint = Color.White) { guide.open() }
+                    GuideHelpButton(tint = Color.White) { startTour() }
                     TextButton(
                         onClick = { viewModel.publishPost(context.applicationContext, onSuccess = onBack) },
-                        enabled = !state.isPublishing
+                        enabled = !state.isPublishing,
+                        modifier = Modifier.tourTarget("create_publish")
                     ) {
                         if (state.isPublishing) {
                             CircularProgressIndicator(
@@ -187,26 +192,29 @@ fun CreatePostsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            // 2. Sección de fotografías
+            // 2. Fotos
             SectionHeader(title = "Fotos *")
-            PhotoSelectionSection(
-                photos = state.photos,
-                onAddPhoto = {
-                    photoPicker.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                },
-                onRemovePhoto = { viewModel.onRemovePhoto(it) }
-            )
-            state.photosError?.let { ErrorText(text = it) }
+            Column(Modifier.fillMaxWidth().tourTarget("create_photos")) {
+                PhotoSelectionSection(
+                    photos = state.photos,
+                    onAddPhoto = {
+                        photoPicker.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    onRemovePhoto = { viewModel.onRemovePhoto(it) }
+                )
+                state.photosError?.let { ErrorText(text = it) }
+            }
 
-            // 3. Selección de categoría
-
+            // 3. Categoría
             SectionHeader(title = "Categoría *")
-            PetCategorySelectionSection(
-                selected = state.selectedPetCategory,
-                onSelected = { viewModel.onPetCategorySelected(it) }
-            )
+            Box(Modifier.fillMaxWidth().tourTarget("create_category")) {
+                PetCategorySelectionSection(
+                    selected = state.selectedPetCategory,
+                    onSelected = { viewModel.onPetCategorySelected(it) }
+                )
+            }
             if (state.selectedPetCategory == PetCategory.VETERINARY) {
                 SectionHeader(title = "Tipo de servicio veterinario *")
                 VetKindSelector(
@@ -228,7 +236,8 @@ fun CreatePostsScreen(
                     )
                 }
             }
-            // 3. Tipo de animal (no aplica en Veterinaria)
+
+            // 4. Tipo de animal (no aplica en Veterinaria)
             if (fields.animal) {
                 SectionHeader(title = "Tipo de animal *")
                 CategorySelectionSection(
@@ -238,17 +247,19 @@ fun CreatePostsScreen(
                 state.categoryError?.let { ErrorText(text = it) }
             }
 
-            // 4. Título
+            // 5. Título
             SectionHeader(title = "Título *")
-            CustomOutlinedTextField(
-                value = state.title,
-                onValueChange = { viewModel.onTitleChange(it) },
-                placeholder = state.selectedPetCategory.titleExample(),
-                isError = state.titleError != null,
-                errorMessage = state.titleError
-            )
+            Box(Modifier.fillMaxWidth().tourTarget("create_title")) {
+                CustomOutlinedTextField(
+                    value = state.title,
+                    onValueChange = { viewModel.onTitleChange(it) },
+                    placeholder = state.selectedPetCategory.titleExample(),
+                    isError = state.titleError != null,
+                    errorMessage = state.titleError
+                )
+            }
 
-            // 5. Raza (lista desplegable)
+            // 6. Raza
             if (fields.breed) {
                 SectionHeader(title = "Raza aproximada *")
                 BreedDropdown(
@@ -260,7 +271,7 @@ fun CreatePostsScreen(
                 )
             }
 
-            // 6. Edad
+            // 7. Edad
             if (fields.age) {
                 SectionHeader(title = "Edad")
                 CustomOutlinedTextField(
@@ -270,7 +281,7 @@ fun CreatePostsScreen(
                 )
             }
 
-            // 7. Tamaño
+            // 8. Tamaño
             if (fields.size) {
                 SectionHeader(title = "Tamaño *")
                 SizeSelectionSection(
@@ -280,7 +291,7 @@ fun CreatePostsScreen(
                 state.sizeError?.let { ErrorText(text = it) }
             }
 
-            // 8. Vacunas
+            // 9. Vacunas
             if (fields.vaccines) {
                 VaccinationSwitchCard(
                     isVaccinated = state.isVaccinated,
@@ -288,17 +299,17 @@ fun CreatePostsScreen(
                 )
             }
 
-
-
-            // 9. Campo de descripción
+            // 10. Descripción
             SectionHeader(title = state.selectedPetCategory.descriptionLabel())
-            DescriptionTextField(
-                value = state.description,
-                onValueChange = { viewModel.onDescriptionChange(it) },
-                maxLength = state.maxDescriptionLength,
-                isError = state.descriptionError != null,
-                errorMessage = state.descriptionError
-            )
+            Box(Modifier.fillMaxWidth().tourTarget("create_desc")) {
+                DescriptionTextField(
+                    value = state.description,
+                    onValueChange = { viewModel.onDescriptionChange(it) },
+                    maxLength = state.maxDescriptionLength,
+                    isError = state.descriptionError != null,
+                    errorMessage = state.descriptionError
+                )
+            }
             AiSuggestionCard(
                 loading = state.aiLoading,
                 suggestion = state.aiSuggestion,
@@ -307,12 +318,14 @@ fun CreatePostsScreen(
                 onDismiss = { viewModel.onDismissSuggestion() }
             )
 
-            // 10. Selección de ubicación en el mapa
+            // 11. Ubicación
             SectionHeader(title = state.selectedPetCategory.locationLabel())
-            LocationSelectionSection(
-                location = state.selectedLocation,
-                onOpenMap = { viewModel.onOpenMapSelector() }
-            )
+            Box(Modifier.fillMaxWidth().tourTarget("create_location")) {
+                LocationSelectionSection(
+                    location = state.selectedLocation,
+                    onOpenMap = { viewModel.onOpenMapSelector() }
+                )
+            }
             state.locationError?.let { ErrorText(text = it) }
 
             Spacer(modifier = Modifier.height(16.dp))

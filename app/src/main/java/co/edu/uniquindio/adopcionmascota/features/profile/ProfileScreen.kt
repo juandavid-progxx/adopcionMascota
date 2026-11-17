@@ -32,8 +32,10 @@ import coil3.compose.AsyncImage
 import co.edu.uniquindio.adopcionmascota.core.data.cloudThumb
 import androidx.compose.foundation.clickable
 import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
-import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
-import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
+import co.edu.uniquindio.adopcionmascota.core.ui.TourStep
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberTour
+import co.edu.uniquindio.adopcionmascota.core.ui.tourTarget
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -45,7 +47,6 @@ fun ProfileScreen(
 
 ) {
     val state by viewModel.uiState.collectAsState()
-    val guide = rememberGuideState("profile")
     val context = LocalContext.current
     val photoPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -61,13 +62,18 @@ fun ProfileScreen(
         )
         return
     }
-    ScreenGuideDialog(guide, "Mi perfil", listOf(
-        "Toca tu foto para cambiarla.",
-        "Define tu ubicación en \"Mi ubicación\" para ver mascotas cercanas.",
-        "Aquí ves tus puntos y tu nivel. Sube de nivel participando.",
-        "En \"Mis publicaciones\" puedes editar o eliminar las tuyas.",
-        "\"Editar mis datos\" cambia tu nombre y teléfono."
-    ))
+    val startTour = rememberTour(
+        "profile",
+        listOf(
+            TourStep("Tu perfil", "Aquí gestionas tus datos, tu ubicación y tu reputación."),
+            TourStep("Tu foto", "Tócala para cambiarla.", target = "profile_photo"),
+            TourStep("Puntos y nivel", "Sumas puntos al participar y subes de nivel.", target = "profile_points"),
+            TourStep("Mi ubicación", "Defínela para ver mascotas cercanas en el feed.", target = "profile_location"),
+            TourStep("Logros", "Mira tus insignias y cómo ganar más puntos.", target = "profile_achievements"),
+            TourStep("Mis publicaciones", "Edita o elimina las tuyas.", target = "profile_myposts"),
+            TourStep("Editar mis datos", "Cambia tu nombre y teléfono.", target = "profile_edit")
+        )
+    )
 
     Scaffold(
         topBar = {
@@ -79,7 +85,7 @@ fun ProfileScreen(
                     }
                 },
                 actions = {
-                    GuideHelpButton { guide.open() }
+                    GuideHelpButton { startTour() }
                 }
             )
         }
@@ -105,7 +111,7 @@ fun ProfileScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(84.dp)
+                            .size(84.dp).tourTarget("profile_photo")
                             .clip(CircleShape)
                             .background(Color(0xFF80CBC4))
                             .clickable {
@@ -156,7 +162,7 @@ fun ProfileScreen(
                 }
             }
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().tourTarget("profile_points"),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
@@ -195,7 +201,7 @@ fun ProfileScreen(
             }
             val savedAddress = user?.address.orEmpty()
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().tourTarget("profile_location"),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
@@ -233,7 +239,7 @@ fun ProfileScreen(
             // Acciones
             Button(
                 onClick = onAchievementsClick,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().tourTarget("profile_myposts"),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9A825))
             ) { Text("🏆 Logros y reputación", color = Color.Black) }
             Button(
@@ -243,7 +249,7 @@ fun ProfileScreen(
             ) { Text("Mis publicaciones") }
             Button(
                 onClick = { viewModel.onEditClick() },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().tourTarget("profile_edit"),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00BFA5))
             ) { Text("Editar mis datos") }
 

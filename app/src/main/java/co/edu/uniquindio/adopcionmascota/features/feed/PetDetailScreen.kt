@@ -61,6 +61,10 @@ import androidx.compose.ui.unit.sp
 import co.edu.uniquindio.adopcionmascota.core.data.SessionManager
 import co.edu.uniquindio.adopcionmascota.core.data.cloudThumb
 import co.edu.uniquindio.adopcionmascota.core.ui.FullScreenGallery
+import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
+import co.edu.uniquindio.adopcionmascota.core.ui.TourStep
+import co.edu.uniquindio.adopcionmascota.core.ui.rememberTour
+import co.edu.uniquindio.adopcionmascota.core.ui.tourTarget
 import coil3.compose.AsyncImage
 import com.mapbox.geojson.Point
 import com.mapbox.maps.ViewAnnotationAnchor
@@ -70,9 +74,8 @@ import com.mapbox.maps.extension.compose.annotation.ViewAnnotation
 import com.mapbox.maps.viewannotation.annotationAnchor
 import com.mapbox.maps.viewannotation.geometry
 import com.mapbox.maps.viewannotation.viewAnnotationOptions
-import co.edu.uniquindio.adopcionmascota.core.ui.GuideHelpButton
-import co.edu.uniquindio.adopcionmascota.core.ui.ScreenGuideDialog
-import co.edu.uniquindio.adopcionmascota.core.ui.rememberGuideState
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -85,16 +88,26 @@ fun PetDetailScreen(
     onComment: (Pet, String) -> Unit = { _, _ -> }
 ) {
     val isOwner = pet.authorId == SessionManager.currentUser?.id
-    val guide = rememberGuideState("pet_detail")
+    val context = LocalContext.current
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
+    val startTour = rememberTour(
+        "pet_detail",
+        listOf(
+            TourStep("Fotos", "Desliza para ver más y toca una para ampliarla.", target = "detail_photos"),
+            TourStep(
+                "Favorito",
+                "Guarda esta publicación para encontrarla después.",
+                target = "detail_fav"
+            ),
+            TourStep("Compartir", "Envía esta publicación por WhatsApp u otra app.", target = "detail_share"),
+            TourStep("Datos", "Especie, tamaño, género, descripción y salud.", target = "detail_info"),
+            TourStep("Quién publica", "Aquí están los datos de contacto del autor.", target = "detail_author"),
+            TourStep("Contactar", "Usa este botón (por ejemplo \"Me interesa adoptar\") para escribirle al autor.", target = "detail_action"),
+            TourStep("Es importante", "Marca la publicación como importante para darle visibilidad.", target = "detail_vote"),
+            TourStep("Comentarios", "Deja tu comentario o pregunta aquí.", target = "detail_comment")
+        )
+    )
 
-    ScreenGuideDialog(guide, "Detalle de la publicación", listOf(
-        "Toca una foto para ampliarla.",
-        "Revisa los datos, la salud y la ubicación en el mapa.",
-        "Usa el botón de acción (por ejemplo \"Me interesa adoptar\") para contactar al autor.",
-        "Puedes marcarla como favorita o como importante.",
-        "Deja un comentario al final de la publicación."
-    ))
 
     Scaffold(
         topBar = {
@@ -106,15 +119,27 @@ fun PetDetailScreen(
                     }
                 },
                 actions = {
-                    GuideHelpButton { guide.open() }
-                    IconButton(onClick = { onToggleFavorite(pet) }) {
+                    GuideHelpButton { startTour() }
+                    IconButton(onClick = { onToggleFavorite(pet) }, modifier = Modifier.tourTarget("detail_fav")) {
                         Icon(
                             imageVector = if (pet.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = "Favorito",
                             tint = if (pet.isFavorite) Color.Red else Color.DarkGray
                         )
                     }
-                    IconButton(onClick = { }) {
+                    IconButton(
+                        onClick = {
+                            val texto = "${pet.category.emoji} ${pet.name} (${pet.category.displayName})\n" +
+                                    "${pet.city}\n\n${pet.description}"
+                            val envio = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_SUBJECT, pet.name)
+                                putExtra(Intent.EXTRA_TEXT, texto)
+                            }
+                            context.startActivity(Intent.createChooser(envio, "Compartir publicación"))
+                        },
+                        modifier = Modifier.tourTarget("detail_share")
+                    ) {
                         Icon(Icons.Default.Share, contentDescription = "Compartir")
                     }
                 },
@@ -133,7 +158,7 @@ fun PetDetailScreen(
                         Text(pet.shelterName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                     Button(
-                        onClick = { onAdoptClick(pet) },
+                        onClick = { onAdoptClick(pet) }, modifier = Modifier.tourTarget("detail_action"),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00BFA5)),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -158,8 +183,7 @@ fun PetDetailScreen(
             // Cabecera: fotos (toca una para verla en pantalla completa)
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(260.dp)
+                    .fillMaxWidth().height(260.dp).tourTarget("detail_photos").padding(horizontal = 16.dp, vertical = 8.dp)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .clip(RoundedCornerShape(20.dp))
                     .background(Color(pet.colorHex))
@@ -243,7 +267,7 @@ fun PetDetailScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 if (pet.category != PetCategory.VETERINARY) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth().tourTarget("detail_info"), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         InfoCard("Especie", pet.type.displayName, Modifier.weight(1f))
                         InfoCard("Tamaño", pet.size, Modifier.weight(1f))
                         InfoCard("Género", pet.gender, Modifier.weight(1f))
@@ -306,7 +330,7 @@ fun PetDetailScreen(
 
                 // Datos de quien publicó: nombre, correo y teléfono
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().tourTarget("detail_author"),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
@@ -405,7 +429,7 @@ private fun CommentsSection(
     Column(modifier = Modifier.fillMaxWidth()) {
         Button(
             onClick = { onVote(pet) },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().tourTarget("detail_vote"),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (pet.votedByMe) Color(0xFF00BFA5) else Color.White,
@@ -448,7 +472,7 @@ private fun CommentsSection(
         }
 
         Spacer(modifier = Modifier.height(12.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.tourTarget("detail_comment"), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
